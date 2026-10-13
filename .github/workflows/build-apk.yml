@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -29,7 +29,7 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Recreate Platform Folders if Missing
+      - name: Generate Official Android Platform Files
         run: |
           flutter create . --org org.asklin --project-name asklin_mobile --platforms android
 

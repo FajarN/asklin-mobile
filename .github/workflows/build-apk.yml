@@ -33,6 +33,17 @@ jobs:
         run: |
           flutter create . --org org.asklin --project-name asklin_mobile --platforms android
 
+      - name: Configure Target SDK 34 (Android 14) & Permissions
+        run: |
+          # Naikkan compileSdkVersion dan targetSdkVersion ke 34 (Android 14)
+          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/' android/app/build.gradle
+          sed -i 's/targetSdkVersion .*/targetSdkVersion 34/' android/app/build.gradle
+          sed -i 's/flutter.compileSdkVersion/34/' android/app/build.gradle || true
+          sed -i 's/flutter.targetSdkVersion/34/' android/app/build.gradle || true
+
+          # Tambahkan izin internet dan storage ke AndroidManifest
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"\/>' android/app/src/main/AndroidManifest.xml
+
       - name: Install Dependencies
         run: flutter pub get
 

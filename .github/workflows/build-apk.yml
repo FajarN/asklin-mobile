@@ -29,14 +29,15 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Recreate Platform Folders if Missing
+        run: |
+          flutter create . --org org.asklin --project-name asklin_mobile --platforms android
+
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Analyze Project Source
-        run: flutter analyze || true
-
       - name: Build APK Release
-        run: flutter build apk --release
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

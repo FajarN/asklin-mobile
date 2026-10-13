@@ -1,0 +1,41 @@
+name: asklin_mobile
+description: "Aplikasi Mobile Resmi ASKLIN - Asosiasi Klinik Indonesia"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI & Styling
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.1.0
+  intl: ^0.19.0
+  
+  # Network & API
+  dio: ^5.4.0
+  
+  # State Management
+  flutter_riverpod: ^2.5.1
+  
+  # Storage
+  flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.2.2
+  
+  # File & Launcher
+  open_filex: ^4.4.0
+  path_provider: ^2.1.2
+  url_launcher: ^6.2.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

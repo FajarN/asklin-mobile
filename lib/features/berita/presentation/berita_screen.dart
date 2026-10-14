@@ -3,6 +3,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import 'berita_detail_screen.dart';
 
 class BeritaScreen extends StatefulWidget {
   const BeritaScreen({Key? key}) : super(key: key);
@@ -169,7 +170,14 @@ class _BeritaCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: () {
-          // Navigasi ke detail berita
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => BeritaDetailScreen(
+                slug: item['slug'] ?? '',
+                judul: item['judul'] ?? '',
+              ),
+            ),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(12),

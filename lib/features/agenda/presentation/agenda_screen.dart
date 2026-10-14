@@ -3,6 +3,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import 'agenda_detail_screen.dart';
 
 class AgendaScreen extends StatefulWidget {
   const AgendaScreen({Key? key}) : super(key: key);
@@ -165,16 +166,21 @@ class _AgendaCard extends StatelessWidget {
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
-                if (isUpcoming)
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryRed,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      minimumSize: const Size(60, 32),
-                    ),
-                    child: const Text('Detail', style: TextStyle(fontSize: 12, color: Colors.white)),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => AgendaDetailScreen(item: item),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryRed,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    minimumSize: const Size(60, 32),
                   ),
+                  child: const Text('Detail', style: TextStyle(fontSize: 12, color: Colors.white)),
+                ),
               ],
             ),
           ],

@@ -198,6 +198,16 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
             title: Text(dpd['nama_struktur'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             subtitle: Text(dpd['alamat_sekretariat'] ?? 'Sekretariat DPD Provinsi', style: const TextStyle(fontSize: 12)),
             trailing: const Icon(Icons.chevron_right, size: 18),
+            onTap: () {
+              _showDetailOrganisasiModal(
+                context,
+                title: dpd['nama_struktur'] ?? 'DPD ASKLIN',
+                periode: dpd['periode'] ?? '2023 - 2028',
+                alamat: dpd['alamat_sekretariat'] ?? 'Sekretariat DPD Provinsi',
+                email: dpd['email_sekretariat'] ?? 'dpd@asklin.org',
+                telp: dpd['telp_sekretariat'] ?? 'Hubungi Pengurus Pusat',
+              );
+            },
           ),
         );
       },
@@ -218,6 +228,79 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
             title: Text(dpc['nama_struktur'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             subtitle: Text('Provinsi: ${dpc['provinsi_name'] ?? '-'}', style: const TextStyle(fontSize: 12)),
             trailing: const Icon(Icons.chevron_right, size: 18),
+            onTap: () {
+              _showDetailOrganisasiModal(
+                context,
+                title: dpc['nama_struktur'] ?? 'DPC ASKLIN',
+                periode: dpc['periode'] ?? '2023 - 2028',
+                alamat: dpc['alamat_sekretariat'] ?? 'Sekretariat Cabang',
+                email: dpc['email_sekretariat'] ?? 'dpc@asklin.org',
+                telp: dpc['telp_sekretariat'] ?? 'Hubungi Sekretariat Daerah',
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDetailOrganisasiModal(
+    BuildContext context, {
+    required String title,
+    required String periode,
+    required String alamat,
+    required String email,
+    required String telp,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: AppColors.softRed,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.account_balance, color: AppColors.primaryRed, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text('Periode: $periode', style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 6),
+              Text('Alamat: $alamat', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              const SizedBox(height: 6),
+              Text('Email: $email', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              const SizedBox(height: 6),
+              Text('Kontak: $telp', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryRed),
+                  child: const Text('TUTUP', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
           ),
         );
       },

@@ -38,6 +38,81 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
     }
   }
 
+  void _showDocumentDialog({
+    required BuildContext context,
+    required String title,
+    required bool isApproved,
+    required String endpoint,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: AppColors.softRed,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.picture_as_pdf, color: AppColors.primaryRed, size: 28),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                isApproved
+                    ? 'Dokumen resmi Anda telah diterbitkan oleh Pengurus Pusat ASKLIN dan siap untuk diunduh dalam format PDF asli.'
+                    : 'Dokumen ini baru dapat diunduh setelah keanggotaan Anda disetujui (Approved) oleh Pengurus Pusat ASKLIN.',
+                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+              ),
+              const SizedBox(height: 24),
+              if (isApproved)
+                AsklinPrimaryButton(
+                  text: 'UNDUH DOKUMEN PDF',
+                  icon: Icons.download,
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Mengunduh $title dari server ASKLIN...'),
+                        backgroundColor: AppColors.statusGreen,
+                      ),
+                    );
+                  },
+                )
+              else
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade400),
+                    child: const Text('TUTUP', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -225,10 +300,13 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                           title: 'Unduh SK',
                           subtitle: 'Surat Keputusan',
                           icon: Icons.assignment_outlined,
-                          isReady: isApproved,
+                          isReady: true,
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Mengunduh SK Keanggotaan ASKLIN...')),
+                            _showDocumentDialog(
+                              context: context,
+                              title: 'Surat Keputusan (SK) Anggota',
+                              isApproved: isApproved,
+                              endpoint: ApiConstants.downloadSk,
                             );
                           },
                         ),
@@ -239,10 +317,13 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                           title: 'Sertifikat',
                           subtitle: 'Sertifikat Anggota',
                           icon: Icons.verified_outlined,
-                          isReady: isApproved,
+                          isReady: true,
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Mengunduh Sertifikat Resmi ASKLIN...')),
+                            _showDocumentDialog(
+                              context: context,
+                              title: 'Sertifikat Keanggotaan ASKLIN',
+                              isApproved: isApproved,
+                              endpoint: ApiConstants.downloadSertifikat,
                             );
                           },
                         ),

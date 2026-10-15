@@ -3,6 +3,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import 'pendaftaran_anggota_screen.dart';
 
 class MemberDashboardScreen extends StatefulWidget {
   const MemberDashboardScreen({Key? key}) : super(key: key);
@@ -277,6 +278,67 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                 ),
               ),
             ),
+
+            // Banner Lengkapi Pendaftaran Faskes jika status masih waiting, create_dokter, atau perlu perbaikan
+            if (!isApproved)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.softRed,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: AppColors.primaryRed.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.assignment_late, color: AppColors.primaryRed, size: 24),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Formulir Pendaftaran Anggota Faskes',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryRed),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Faskes Anda belum menyelesaikan pendaftaran lengkap atau data masih memerlukan perbaikan berkas/SDM.',
+                        style: TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.4),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 42,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.edit_note, size: 18),
+                          label: const Text('LENGKAPI FORMULIR PENDAFTARAN & SDM', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryRed,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () async {
+                            final updated = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PendaftaranAnggotaScreen(initialData: klinik),
+                              ),
+                            );
+                            if (updated == true) {
+                              _loadDashboardData();
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
             // Aksi Cepat / Dokumen Digital
             Padding(

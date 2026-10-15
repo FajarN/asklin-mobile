@@ -8,6 +8,7 @@ import '../../auth/presentation/login_screen.dart';
 import 'change_password_screen.dart';
 import 'help_center_screen.dart';
 import 'about_screen.dart';
+import '../dashboard/presentation/pendaftaran_anggota_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -143,6 +144,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               icon: Icons.location_on_outlined,
                               label: 'Wilayah Cabang',
                               value: _klinik?['wilayah']?['kota'] ?? 'Kab/Kota Terdaftar',
+                            ),
+                            const Divider(height: 20),
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.assignment_outlined, color: AppColors.primaryRed),
+                              title: const Text('Formulir Pendaftaran Faskes', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                              subtitle: const Text('Ubah atau lengkapi data klinik & dokter PJ', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                              trailing: const Icon(Icons.chevron_right, size: 20),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => PendaftaranAnggotaScreen(initialData: _klinik)),
+                                );
+                              },
                             ),
                           ],
                         ),

@@ -67,3 +67,4 @@ class FormattedContentWidget extends StatelessWidget {
     );
   }
 }
+

@@ -41,29 +41,57 @@ jobs:
 
       - name: Configure Android App Identity & SDK
         run: |
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          GRADLE="android/app/build.gradle"
+          python3 -c "
+          import os, re
 
-          # ===== 1. FIX APP NAME: "ASKLIN" =====
-          sed -i 's/android:label="asklin_mobile"/android:label="ASKLIN"/' "$MANIFEST"
+          # 1. Update AndroidManifest.xml
+          manifest_path = 'android/app/src/main/AndroidManifest.xml'
+          if os.path.exists(manifest_path):
+              with open(manifest_path, 'r', encoding='utf-8') as f:
+                  m_content = f.read()
 
-          # ===== 2. FIX targetSdkVersion & compileSdkVersion to 34 (Android 14) =====
-          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/' "$GRADLE"
-          sed -i 's/targetSdkVersion .*/targetSdkVersion 34/' "$GRADLE"
-          sed -i 's/minSdkVersion .*/minSdkVersion 21/' "$GRADLE"
-          sed -i 's/flutter\.compileSdkVersion/34/g' "$GRADLE"
-          sed -i 's/flutter\.targetSdkVersion/34/g' "$GRADLE"
-          sed -i 's/flutter\.minSdkVersion/21/g' "$GRADLE"
+              # Replace application label with ASKLIN
+              m_content = re.sub(r'android:label=\"[^\"]*\"', 'android:label=\"ASKLIN\"', m_content)
 
-          # ===== 3. ADD INTERNET PERMISSION =====
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"\/>' "$MANIFEST"
+              # Ensure permissions exist
+              perms = '''    <uses-permission android:name=\"android.permission.INTERNET\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>\n'''
+              if 'android.permission.INTERNET' not in m_content:
+                  m_content = m_content.replace('<application', perms + '    <application')
 
-          # ===== 4. ENSURE LAUNCHER INTENT FILTER EXISTS =====
-          # Flutter create usually includes this, but verify it's correct
-          echo "--- AndroidManifest.xml ---"
-          cat "$MANIFEST"
-          echo "--- build.gradle ---"
-          grep -E 'compileSdk|targetSdk|minSdk' "$GRADLE" || true
+              with open(manifest_path, 'w', encoding='utf-8') as f:
+                  f.write(m_content)
+              print('Updated AndroidManifest.xml')
+
+          # 2. Update strings.xml if exists
+          strings_path = 'android/app/src/main/res/values/strings.xml'
+          if os.path.exists(strings_path):
+              with open(strings_path, 'r', encoding='utf-8') as f:
+                  s_content = f.read()
+              s_content = re.sub(r'<string name=\"app_name\">.*?</string>', '<string name=\"app_name\">ASKLIN</string>', s_content)
+              with open(strings_path, 'w', encoding='utf-8') as f:
+                  f.write(s_content)
+              print('Updated strings.xml')
+
+          # 3. Update build.gradle for SDK 34 (Android 14)
+          gradle_path = 'android/app/build.gradle'
+          if os.path.exists(gradle_path):
+              with open(gradle_path, 'r', encoding='utf-8') as f:
+                  g_content = f.read()
+
+              g_content = re.sub(r'compileSdkVersion\s+.*', 'compileSdkVersion 34', g_content)
+              g_content = re.sub(r'compileSdk\s*=.*', 'compileSdk = 34', g_content)
+              g_content = re.sub(r'targetSdkVersion\s+.*', 'targetSdkVersion 34', g_content)
+              g_content = re.sub(r'targetSdk\s*=.*', 'targetSdk = 34', g_content)
+              g_content = re.sub(r'minSdkVersion\s+.*', 'minSdkVersion 21', g_content)
+              g_content = re.sub(r'minSdk\s*=.*', 'minSdk = 21', g_content)
+              g_content = g_content.replace('flutter.compileSdkVersion', '34')
+              g_content = g_content.replace('flutter.targetSdkVersion', '34')
+              g_content = g_content.replace('flutter.minSdkVersion', '21')
+
+              with open(gradle_path, 'w', encoding='utf-8') as f:
+                  f.write(g_content)
+              print('Updated build.gradle with SDK 34')
+          "
 
       - name: Install Dependencies
         run: flutter pub get
@@ -72,7 +100,7 @@ jobs:
         run: dart run flutter_launcher_icons
 
       - name: Verify Dart Code
-        run: flutter analyze lib/ || true
+        run: flutter analyze lib/ --no-fatal-infos --no-fatal-warnings
 
       - name: Build APK Release
         run: flutter build apk --release --no-tree-shake-icons

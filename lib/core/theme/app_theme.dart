@@ -25,6 +25,8 @@ class AppColors {
   static const Color statusYellowBg = Color(0xFFFEF3C7);
   static const Color statusBlue = Color(0xFF2563EB);
   static const Color statusBlueBg = Color(0xFFDBEAFE);
+  static const Color statusRed = Color(0xFFDC2626);
+  static const Color statusRedBg = Color(0xFFFEE2E2);
 }
 
 class AppRadius {

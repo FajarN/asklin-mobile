@@ -110,30 +110,7 @@ jobs:
       - name: Build APK Release
         run: |
           set -o pipefail
-          flutter build apk --release --no-tree-shake-icons --verbose > build.log 2>&1 || {
-            BUILD_CODE=$?
-            echo "==================== DUMPING BUILD ERRORS TO ANNOTATIONS ===================="
-            python3 -c "
-            with open('build.log', 'r', errors='ignore') as f:
-                lines = [l.strip() for l in f]
-
-            # 1. Look for Dart/Gradle failure messages
-            relevant = []
-            for idx, line in enumerate(lines):
-                if any(w in line for w in ['Error:', 'FAILURE:', 'Exception:', 'Target ', 'failed with exit code']):
-                    for c in lines[max(0, idx-2):min(len(lines), idx+4)]:
-                        if c and c not in relevant:
-                            relevant.append(c)
-
-            print(f'Found {len(relevant)} relevant error lines.')
-            for i, r in enumerate(relevant[:15]):
-                # GitHub annotation format
-                clean_r = r.replace('%', '%25').replace('\r', '').replace('\n', '%0A')
-                print(f'::error title=Err_{i}::{clean_r[:250]}')
-            "
-            tail -n 100 build.log
-            exit $BUILD_CODE
-          }
+          flutter build apk --release --no-tree-shake-icons 2>&1 | tee build.log
 
       - name: Rename APK Output
         run: |
@@ -153,12 +130,20 @@ jobs:
           gh release delete latest --yes 2>/dev/null || true
           git tag -d latest 2>/dev/null || true
           git push origin :latest 2>/dev/null || true
-          gh release delete debug-log --yes 2>/dev/null || true
-          git tag -d debug-log 2>/dev/null || true
-          git push origin :debug-log 2>/dev/null || true
           gh release create latest build/app/outputs/flutter-apk/ASKLIN.apk \
             --title "ASKLIN Mobile App (Release)" \
             --notes "Aplikasi Mobile Resmi ASKLIN - Asosiasi Klinik Indonesia.%0AUnduh langsung file ASKLIN.apk dan instal di perangkat Android Anda."
+
+      - name: Save Failure Log to Git Branch
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B debug-log
+          cp build.log failure.log 2>/dev/null || true
+          git add failure.log
+          git commit -m "debug: build failure log" || true
+          git push -f origin debug-log || true
 
       - name: Upload Build Log on Failure
         if: failure()

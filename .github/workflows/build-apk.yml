@@ -144,19 +144,23 @@ jobs:
           path: build/app/outputs/flutter-apk/ASKLIN.apk
           if-no-files-found: error
 
+      - name: Publish ASKLIN Release APK (One-Click Mobile Download)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --yes 2>/dev/null || true
+          git tag -d latest 2>/dev/null || true
+          git push origin :latest 2>/dev/null || true
+          gh release delete debug-log --yes 2>/dev/null || true
+          git tag -d debug-log 2>/dev/null || true
+          git push origin :debug-log 2>/dev/null || true
+          gh release create latest build/app/outputs/flutter-apk/ASKLIN.apk \
+            --title "ASKLIN Mobile App (Release)" \
+            --notes "Aplikasi Mobile Resmi ASKLIN - Asosiasi Klinik Indonesia.%0AUnduh langsung file ASKLIN.apk dan instal di perangkat Android Anda."
+
       - name: Upload Build Log on Failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: build-failure-log
           path: build.log
-
-      - name: Publish Build Failure Log to Release
-        if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release delete debug-log --yes 2>/dev/null || true
-          git tag -d debug-log 2>/dev/null || true
-          git push origin :debug-log 2>/dev/null || true
-          gh release create debug-log build.log --title "Build Failure Log" --notes "Automated CI failure log"

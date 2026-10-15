@@ -203,6 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ListTile(
                             leading: const Icon(Icons.help_outline, color: AppColors.primaryRed),
                             title: const Text('Pusat Bantuan & Kontak Pengurus', style: TextStyle(fontSize: 14)),
+                            subtitle: const Text('+62 823-1098-1637 (WhatsApp/Call)', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                             trailing: const Icon(Icons.chevron_right, size: 20),
                             onTap: () {
                               Navigator.push(

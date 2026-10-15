@@ -159,6 +159,39 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
             ),
           ),
         ),
+        const SizedBox(height: 14),
+
+        // Card Visi & Misi ASKLIN
+        Card(
+          color: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Visi ASKLIN',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryRed),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  '”Menjadikan Klinik sebagai sarana pelayanan kesehatan terdepan dalam melayani kesehatan masyarakat dengan sistem rujukan yang terarah dan terpadu”.',
+                  style: TextStyle(fontSize: 12, height: 1.5, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                ),
+                Divider(height: 20),
+                Text(
+                  'Misi ASKLIN',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryRed),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  '1. Membantu/memfasilitasi klinik menyelesaikan permasalahan.\n2. Menjaga standar klinik dalam memberikan pelayanan kepada masyarakat.\n3. Menghindari/mencegah persaingan tidak sehat antar klinik.\n4. Melakukan advokasi/pembelaan bagi klinik.\n5. Menyampaikan informasi kepada klinik tentang program-program Pemerintah tentang kesehatan yang harus dilaksanakan bersama masyarakat.\n6. Membantu terlaksananya tertib administrasi klinik dalam rangka menuju pelayanan yang berkualitas dan dapat dipertanggungjawabkan.',
+                  style: TextStyle(fontSize: 11.5, height: 1.5, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 16),
 
         const Text(

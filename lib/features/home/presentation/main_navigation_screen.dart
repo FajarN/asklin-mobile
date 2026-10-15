@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../agenda/presentation/agenda_screen.dart';
-import '../../berita/presentation/berita_screen.dart';
 import '../../dashboard/presentation/member_dashboard_screen.dart';
+import '../../informasi/presentation/informasi_screen.dart';
 import '../../organisasi/presentation/organisasi_screen.dart';
+import '../../pembayaran/presentation/konfirmasi_iuran_screen.dart';
+import '../../pengurus/presentation/pengurus_data_anggota_screen.dart';
 import '../../pengurus/presentation/pengurus_verifikasi_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 
@@ -53,13 +54,77 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       );
     }
 
-    final List<Widget> pages = [
-      _isPengurus ? const PengurusVerifikasiScreen() : const MemberDashboardScreen(),
-      const BeritaScreen(),
-      const AgendaScreen(),
-      const OrganisasiScreen(),
-      const ProfileScreen(),
-    ];
+    final List<Widget> pages = _isPengurus
+        ? [
+            const PengurusVerifikasiScreen(),
+            const PengurusDataAnggotaScreen(),
+            const InformasiScreen(),
+            const OrganisasiScreen(),
+            const ProfileScreen(),
+          ]
+        : [
+            const MemberDashboardScreen(),
+            const KonfirmasiIuranScreen(),
+            const InformasiScreen(),
+            const OrganisasiScreen(),
+            const ProfileScreen(),
+          ];
+
+    final List<BottomNavigationBarItem> items = _isPengurus
+        ? [
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.verified_user_outlined),
+              activeIcon: Icon(Icons.verified_user),
+              label: 'Verifikasi',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.people_alt_outlined),
+              activeIcon: Icon(Icons.people_alt),
+              label: 'Data Anggota',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.article_outlined),
+              activeIcon: Icon(Icons.article),
+              label: 'Informasi',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.account_tree_outlined),
+              activeIcon: Icon(Icons.account_tree),
+              label: 'Organisasi',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profil',
+            ),
+          ]
+        : [
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_outlined),
+              activeIcon: Icon(Icons.dashboard),
+              label: 'Keanggotaan',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.payments_outlined),
+              activeIcon: Icon(Icons.payments),
+              label: 'Pembayaran',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.article_outlined),
+              activeIcon: Icon(Icons.article),
+              label: 'Informasi',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.account_tree_outlined),
+              activeIcon: Icon(Icons.account_tree),
+              label: 'Organisasi',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profil',
+            ),
+          ];
 
     return Scaffold(
       body: IndexedStack(
@@ -87,33 +152,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           elevation: 0,
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(_isPengurus ? Icons.verified_user_outlined : Icons.dashboard_outlined),
-              activeIcon: Icon(_isPengurus ? Icons.verified_user : Icons.dashboard),
-              label: _isPengurus ? 'Verifikasi' : 'Keanggotaan',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.newspaper_outlined),
-              activeIcon: Icon(Icons.newspaper),
-              label: 'Berita',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.event_outlined),
-              activeIcon: Icon(Icons.event),
-              label: 'Agenda',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.account_tree_outlined),
-              activeIcon: Icon(Icons.account_tree),
-              label: 'Organisasi',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profil',
-            ),
-          ],
+          items: items,
         ),
       ),
     );

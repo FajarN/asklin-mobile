@@ -73,6 +73,15 @@ class HelpCenterScreen extends StatelessWidget {
                     const SizedBox(height: 12),
 
                     _ContactRow(
+                      icon: Icons.phone_android,
+                      label: 'Kontak Pengurus / Layanan',
+                      value: '+62 823-1098-1637',
+                      actionTitle: 'Hubungi',
+                      onAction: () => _launchUrlHelper('tel:+6282310981637'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _ContactRow(
                       icon: Icons.phone_outlined,
                       label: 'Telepon Kantor',
                       value: '(021) 8098928',
@@ -105,7 +114,7 @@ class HelpCenterScreen extends StatelessWidget {
 
             // Tombol Cepat Layanan WhatsApp
             InkWell(
-              onTap: () => _launchUrlHelper('https://wa.me/6281219486667?text=Halo%20Admin%20ASKLIN,%20saya%20anggota%20klinik%20ingin%20bertanya%20terkait%20layanan%20keanggotaan.'),
+              onTap: () => _launchUrlHelper('https://wa.me/6282310981637?text=Halo%20Pengurus%20ASKLIN,%20saya%20anggota%20klinik%20ingin%20berkonsultasi%20terkait%20keanggotaan%20ASKLIN.'),
               borderRadius: BorderRadius.circular(AppRadius.lg),
               child: Container(
                 padding: const EdgeInsets.all(16),

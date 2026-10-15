@@ -96,7 +96,7 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
   Widget build(BuildContext context) {
     final scope = _dashboardData?['scope'] ?? {};
     final kpi = _dashboardData?['kpi_stats'] ?? {};
-    final scopeTitle = scope['title'] ?? 'Pengurus ASKLIN';
+    final wilayahName = scope['title'] ?? 'Pengurus ASKLIN';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -125,9 +125,9 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
               ],
               flexibleSpace: FlexibleSpaceBar(
                 titlePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                title: Text(
-                  scopeTitle,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                title: const Text(
+                  'Verifikasi Anggota ASKLIN',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -167,9 +167,16 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
+                        Text(
+                          wilayahName,
+                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
                         const Text(
-                          'Pusat Verifikasi Keanggotaan Faskes',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                          'Pusat Verifikasi Keanggotaan Faskes ASKLIN',
+                          style: TextStyle(color: Colors.white70, fontSize: 11),
                         ),
                       ],
                     ),
@@ -456,7 +463,8 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
     final isApproved = item['is_approved'] == true;
     final kota = item['kota'] ?? '-';
     final pemilik = item['nama_pemilik'] ?? item['kontak'] ?? '-';
-    final tglDaftar = item['tanggal_daftar'] ?? '-';
+    final tglDaftar = item['menunggu_sejak'] ?? item['tanggal_daftar'] ?? '-';
+    final durasi = item['durasi_menunggu'] ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -546,6 +554,40 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
                 ),
                 AsklinStatusBadge(status: status, isApproved: isApproved),
               ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: isApproved ? AppColors.statusGreenBg : Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: isApproved ? AppColors.statusGreen.withOpacity(0.3) : Colors.amber.shade400,
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isApproved ? Icons.check_circle_outline : Icons.history_toggle_off,
+                    size: 15,
+                    color: isApproved ? AppColors.statusGreen : Colors.amber.shade900,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isApproved
+                          ? 'Terdaftar & Disetujui: $tglDaftar'
+                          : 'Diajukan sejak: $tglDaftar ${durasi.isNotEmpty ? "($durasi)" : ""}',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: isApproved ? AppColors.statusGreen : Colors.amber.shade950,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 14),
             SizedBox(

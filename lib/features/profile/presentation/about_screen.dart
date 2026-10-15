@@ -56,7 +56,7 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             const Text(
-              'Asosiasi Klinik Indonesia (ASKLIN) adalah organisasi profesi dan perhimpunan resmi klinik-klinik di seluruh Indonesia yang berdedikasi untuk memajukan standar mutu pelayanan kesehatan, memperkuat tata kelola klinik, dan memperjuangkan aspirasi fasilitas pelayanan kesehatan primer dan sekunder.',
+              'Tujuan kemitraan untuk organisasi ASKLIN adalah untuk mencapai upaya peningkatan kualitas dan pelayanan klinik anggota ASKLIN demi mencapai sasaran akhir adalah kesehatan bagi masyarakat yang menerima pelayanan klinik. Adapun bentuk kemitraan yang akan dilaksanakan oleh ASKLIN adalah kerjasama dengan pihak asuransi dan juga beberapa pihak yang dapat menunjang kegiatan operasional klinik. Sehingga dengan adanya ASKLIN kemitraan yang dikembangnkan saling menguntungkan bagi masing-masing pihak.',
               textAlign: TextAlign.justify,
               style: TextStyle(fontSize: 13, height: 1.6, color: AppColors.textSecondary),
             ),
@@ -71,17 +71,17 @@ class AboutScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
                     Text('Visi ASKLIN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryRed)),
-                    SizedBox(height: 6),
+                    SizedBox(height: 8),
                     Text(
-                      'Menjadi wadah berhimpun klinik di Indonesia yang profesional, berintegritas, dan terpercaya dalam mewujudkan pelayanan kesehatan paripurna bagi masyarakat.',
-                      style: TextStyle(fontSize: 12, height: 1.5, color: AppColors.textSecondary),
+                      '”Menjadikan Klinik sebagai sarana pelayanan kesehatan terdepan dalam melayani kesehatan masyarakat dengan sistem rujukan yang terarah dan terpadu”.',
+                      style: TextStyle(fontSize: 12.5, height: 1.5, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
                     ),
-                    Divider(height: 20),
+                    Divider(height: 24),
                     Text('Misi ASKLIN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryRed)),
-                    SizedBox(height: 6),
+                    SizedBox(height: 8),
                     Text(
-                      '1. Membina dan mendampingi klinik anggota dalam proses akreditasi dan kepatuhan regulasi.\n2. Mengembangkan kompetensi tenaga medis dan manajemen klinik.\n3. Membangun sinergi yang harmonis dengan Kementerian Kesehatan, BPJS Kesehatan, dan mitra strategis.',
-                      style: TextStyle(fontSize: 12, height: 1.5, color: AppColors.textSecondary),
+                      '1. Membantu/memfasilitasi klinik menyelesaikan permasalahan.\n2. Menjaga standar klinik dalam memberikan pelayanan kepada masyarakat.\n3. Menghindari/mencegah persaingan tidak sehat antar klinik.\n4. Melakukan advokasi/pembelaan bagi klinik.\n5. Menyampaikan informasi kepada klinik tentang program-program Pemerintah tentang kesehatan yang harus dilaksanakan bersama masyarakat.\n6. Membantu terlaksananya tertib administrasi klinik dalam rangka menuju pelayanan yang berkualitas dan dapat dipertanggungjawabkan.',
+                      style: TextStyle(fontSize: 12, height: 1.6, color: AppColors.textSecondary),
                     ),
                   ],
                 ),

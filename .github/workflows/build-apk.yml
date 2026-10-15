@@ -107,15 +107,26 @@ jobs:
           set -o pipefail
           flutter build apk --release --no-tree-shake-icons --verbose > build.log 2>&1 || {
             BUILD_CODE=$?
-            echo "::error::Flutter build apk failed with exit code $BUILD_CODE"
-            echo "==================== BUILD ERROR SUMMARY ===================="
-            grep -E -C 3 -i "error:|exception|failure|cannot find|undefined|unresolved" build.log | head -n 80 || true
-            echo "==================== LAST 120 LINES OF BUILD LOG ===================="
-            tail -n 120 build.log
-            echo "## ❌ Build APK Failed" >> $GITHUB_STEP_SUMMARY
-            echo '```text' >> $GITHUB_STEP_SUMMARY
-            tail -n 60 build.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "==================== DUMPING BUILD ERRORS TO ANNOTATIONS ===================="
+            python3 -c "
+            with open('build.log', 'r', errors='ignore') as f:
+                lines = [l.strip() for l in f]
+
+            # 1. Look for Dart/Gradle failure messages
+            relevant = []
+            for idx, line in enumerate(lines):
+                if any(w in line for w in ['Error:', 'FAILURE:', 'Exception:', 'Target ', 'failed with exit code']):
+                    for c in lines[max(0, idx-2):min(len(lines), idx+4)]:
+                        if c and c not in relevant:
+                            relevant.append(c)
+
+            print(f'Found {len(relevant)} relevant error lines.')
+            for i, r in enumerate(relevant[:15]):
+                # GitHub annotation format
+                clean_r = r.replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+                print(f'::error title=Err_{i}::{clean_r[:250]}')
+            "
+            tail -n 100 build.log
             exit $BUILD_CODE
           }
 

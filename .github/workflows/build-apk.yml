@@ -103,7 +103,21 @@ jobs:
         run: flutter analyze lib/ --no-fatal-infos --no-fatal-warnings
 
       - name: Build APK Release
-        run: flutter build apk --release --no-tree-shake-icons
+        run: |
+          set -o pipefail
+          flutter build apk --release --no-tree-shake-icons --verbose > build.log 2>&1 || {
+            BUILD_CODE=$?
+            echo "::error::Flutter build apk failed with exit code $BUILD_CODE"
+            echo "==================== BUILD ERROR SUMMARY ===================="
+            grep -E -C 3 -i "error:|exception|failure|cannot find|undefined|unresolved" build.log | head -n 80 || true
+            echo "==================== LAST 120 LINES OF BUILD LOG ===================="
+            tail -n 120 build.log
+            echo "## ❌ Build APK Failed" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 60 build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit $BUILD_CODE
+          }
 
       - name: Rename APK Output
         run: |
@@ -115,3 +129,10 @@ jobs:
           name: ASKLIN-release
           path: build/app/outputs/flutter-apk/ASKLIN.apk
           if-no-files-found: error
+
+      - name: Upload Build Log on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-log
+          path: build.log

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/formatted_content_widget.dart';
 
 class BeritaDetailScreen extends StatefulWidget {
   final String slug;
@@ -121,14 +122,9 @@ class _BeritaDetailScreenState extends State<BeritaDetailScreen> {
                             ),
                             const Divider(height: 30),
 
-                            // Konten Teks Bersih
-                            Text(
-                              _detail!['konten_bersih'] ?? '',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                height: 1.7,
-                                color: AppColors.textPrimary,
-                              ),
+                            // Konten Teks Terformat Rapi
+                            FormattedContentWidget(
+                              rawText: _detail!['konten_html'] ?? _detail!['konten_bersih'] ?? '',
                             ),
                             const SizedBox(height: 30),
                           ],

@@ -1,16 +1,67 @@
 import 'package:flutter/material.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/network/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/formatted_content_widget.dart';
 
-class AgendaDetailScreen extends StatelessWidget {
+class AgendaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
 
   const AgendaDetailScreen({Key? key, required this.item}) : super(key: key);
 
   @override
+  State<AgendaDetailScreen> createState() => _AgendaDetailScreenState();
+}
+
+class _AgendaDetailScreenState extends State<AgendaDetailScreen> {
+  final _apiClient = ApiClient();
+  Map<String, dynamic>? _detailData;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFullEvent();
+  }
+
+  Future<void> _fetchFullEvent() async {
+    final slug = widget.item['slug'] ?? widget.item['id']?.toString();
+    if (slug == null) {
+      setState(() {
+        _detailData = widget.item;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final res = await _apiClient.dio.get('${ApiConstants.agenda}/$slug');
+      if (res.data['success'] == true) {
+        setState(() {
+          _detailData = res.data['data'];
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _detailData = widget.item;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      setState(() {
+        _detailData = widget.item;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final statusPill = item['status_pill'] ?? 'Pendaftaran Buka';
+    final data = _detailData ?? widget.item;
+    final statusPill = data['status_pill'] ?? 'Pendaftaran Buka';
     final isUpcoming = statusPill == 'Pendaftaran Buka' || statusPill == 'Sedang Berlangsung';
+    final rawContent = data['konten_html'] ?? data['konten_bersih'] ?? data['excerpt'] ?? '';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -23,7 +74,7 @@ class AgendaDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Image jika ada atau Banner Merah
+            // Banner Merah Header
             Container(
               width: double.infinity,
               height: 180,
@@ -66,7 +117,7 @@ class AgendaDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item['judul'] ?? 'Agenda ASKLIN',
+                    data['judul'] ?? 'Agenda ASKLIN',
                     style: const TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.bold,
@@ -79,16 +130,16 @@ class AgendaDetailScreen extends StatelessWidget {
                   _InfoRow(
                     icon: Icons.calendar_month,
                     title: 'Tanggal Pelaksanaan',
-                    value: item['tanggal_formatted'] ?? 'Lihat jadwal resmi',
+                    value: data['tanggal_formatted'] ?? 'Lihat jadwal resmi',
                   ),
                   const SizedBox(height: 12),
 
                   // Info Jam
-                  if (item['jam_formatted'] != null) ...[
+                  if (data['jam_formatted'] != null) ...[
                     _InfoRow(
                       icon: Icons.access_time,
                       title: 'Waktu / Jam',
-                      value: item['jam_formatted'],
+                      value: data['jam_formatted'],
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -97,19 +148,23 @@ class AgendaDetailScreen extends StatelessWidget {
                   _InfoRow(
                     icon: Icons.location_on,
                     title: 'Tempat / Lokasi',
-                    value: item['lokasi'] ?? 'ASKLIN Indonesia',
+                    value: data['lokasi'] ?? 'ASKLIN Indonesia',
                   ),
                   const Divider(height: 32),
 
                   const Text(
-                    'Deskripsi Kegiatan',
+                    'Deskripsi & Rincian Kegiatan',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    item['excerpt'] ?? 'Tidak ada deskripsi rinci.',
-                    style: const TextStyle(fontSize: 14, height: 1.6, color: AppColors.textSecondary),
-                  ),
+                  const SizedBox(height: 12),
+
+                  _isLoading
+                      ? const Center(child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(color: AppColors.primaryRed),
+                        ))
+                      : FormattedContentWidget(rawText: rawContent),
+
                   const SizedBox(height: 30),
 
                   if (isUpcoming)
@@ -119,7 +174,7 @@ class AgendaDetailScreen extends StatelessWidget {
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Pendaftaran kegiatan berhasil dibuka di portal ASKLIN.'),
+                            content: Text('Pendaftaran kegiatan dibuka melalui portal resmi ASKLIN.'),
                             backgroundColor: AppColors.statusGreen,
                           ),
                         );

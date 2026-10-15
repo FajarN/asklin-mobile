@@ -5,6 +5,9 @@ import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../auth/presentation/login_screen.dart';
+import 'change_password_screen.dart';
+import 'help_center_screen.dart';
+import 'about_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -155,21 +158,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             leading: const Icon(Icons.security, color: AppColors.primaryRed),
                             title: const Text('Ganti Password', style: TextStyle(fontSize: 14)),
                             trailing: const Icon(Icons.chevron_right, size: 20),
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+                              );
+                            },
                           ),
                           const Divider(height: 1),
                           ListTile(
                             leading: const Icon(Icons.help_outline, color: AppColors.primaryRed),
                             title: const Text('Pusat Bantuan & Kontak Pengurus', style: TextStyle(fontSize: 14)),
                             trailing: const Icon(Icons.chevron_right, size: 20),
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const HelpCenterScreen()),
+                              );
+                            },
                           ),
                           const Divider(height: 1),
                           ListTile(
                             leading: const Icon(Icons.info_outline, color: AppColors.primaryRed),
                             title: const Text('Tentang ASKLIN Mobile (v1.0.0)', style: TextStyle(fontSize: 14)),
                             trailing: const Icon(Icons.chevron_right, size: 20),
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const AboutScreen()),
+                              );
+                            },
                           ),
                         ],
                       ),

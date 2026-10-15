@@ -32,11 +32,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _fetchProfile() async {
     try {
       final res = await _apiClient.dio.get(ApiConstants.profile);
-      setState(() {
-        _user = res.data['data']['user'];
-        _klinik = res.data['data']['klinik'];
-        _isLoading = false;
-      });
+      if (res.data['success'] == true) {
+        final data = res.data['data'] as Map<String, dynamic>;
+        setState(() {
+          _user = data['user'] as Map<String, dynamic>?;
+          _klinik = (data['klinik'] ?? data) as Map<String, dynamic>?;
+          _isLoading = false;
+        });
+        return;
+      }
+      setState(() => _isLoading = false);
     } catch (e) {
       setState(() => _isLoading = false);
     }
@@ -63,14 +68,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    final name = _user?['name'] ?? 'Penanggung Jawab Klinik';
-    final email = _user?['email'] ?? 'klinik@asklin.org';
-    final role = _user?['primary_role'] ?? 'Klinik';
+    final isPengurus = _klinik?['is_pengurus'] == true || _user?['primary_role'] == 'Superadmin';
+    final name = _user?['name'] ?? _klinik?['nama_pemilik_klinik'] ?? _klinik?['nama_klinik'] ?? 'Pengguna ASKLIN';
+    final email = _user?['email'] ?? _klinik?['kontak']?['email'] ?? _klinik?['email'] ?? '-';
+    final role = _user?['primary_role'] ?? (isPengurus ? 'Superadmin' : 'Klinik');
+    final namaKlinik = _klinik?['nama_klinik'] ?? (isPengurus ? 'Pengurus Pusat ASKLIN' : '-');
+    final noAnggota = _klinik?['no_anggota'] ?? (isPengurus ? 'Pengurus / Administrator' : 'Menunggu Verifikasi');
+    final kota = _klinik?['alamat_lengkap']?['kota'] ?? _klinik?['wilayah']?['kota'] ?? (isPengurus ? 'DKI Jakarta (Pusat)' : 'Kab/Kota Terdaftar');
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      body: SingleChildScrollView(
-        child: Column(
+      body: RefreshIndicator(
+        color: AppColors.primaryRed,
+        onRefresh: _fetchProfile,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
           children: [
             // Header Merah dengan Avatar
             AsklinHeaderOrnament(
@@ -85,7 +98,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: CircleAvatar(
                         radius: 37,
                         backgroundColor: AppColors.softRed,
-                        child: const Icon(Icons.person, size: 45, color: AppColors.primaryRed),
+                        child: Icon(
+                          isPengurus ? Icons.admin_panel_settings : Icons.person,
+                          size: 45,
+                          color: AppColors.primaryRed,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -120,9 +137,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Informasi Keanggotaan',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            Text(
+                              isPengurus ? 'Informasi Akun Pengurus' : 'Informasi Keanggotaan',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                             const Divider(height: 20),
                             _ProfileItem(
@@ -131,34 +148,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               value: role,
                             ),
                             _ProfileItem(
-                              icon: Icons.local_hospital_outlined,
-                              label: 'Nama Klinik',
-                              value: _klinik?['nama_klinik'] ?? '-',
+                              icon: isPengurus ? Icons.security : Icons.local_hospital_outlined,
+                              label: isPengurus ? 'Instansi / Organisasi' : 'Nama Klinik',
+                              value: namaKlinik,
                             ),
                             _ProfileItem(
                               icon: Icons.confirmation_number_outlined,
-                              label: 'Nomor Anggota',
-                              value: _klinik?['no_anggota'] ?? 'Menunggu Verifikasi',
+                              label: isPengurus ? 'Status Jabatan' : 'Nomor Anggota',
+                              value: noAnggota,
                             ),
                             _ProfileItem(
                               icon: Icons.location_on_outlined,
-                              label: 'Wilayah Cabang',
-                              value: _klinik?['wilayah']?['kota'] ?? 'Kab/Kota Terdaftar',
+                              label: isPengurus ? 'Wilayah Kepengurusan' : 'Wilayah Cabang',
+                              value: kota,
                             ),
-                            const Divider(height: 20),
-                            ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: const Icon(Icons.assignment_outlined, color: AppColors.primaryRed),
-                              title: const Text('Formulir Pendaftaran Faskes', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                              subtitle: const Text('Ubah atau lengkapi data klinik & dokter PJ', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                              trailing: const Icon(Icons.chevron_right, size: 20),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => PendaftaranAnggotaScreen(initialData: _klinik)),
-                                );
-                              },
-                            ),
+                            if (!isPengurus) ...[
+                              const Divider(height: 20),
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(Icons.assignment_outlined, color: AppColors.primaryRed),
+                                title: const Text('Formulir Pendaftaran Faskes', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                subtitle: const Text('Ubah atau lengkapi data klinik & dokter PJ', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                trailing: const Icon(Icons.chevron_right, size: 20),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => PendaftaranAnggotaScreen(initialData: _klinik)),
+                                  );
+                                },
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -240,7 +259,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
 

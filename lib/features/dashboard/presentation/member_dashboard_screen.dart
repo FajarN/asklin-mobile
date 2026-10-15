@@ -124,16 +124,24 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
       );
     }
 
-    final klinik = _profileData?['klinik'] ?? {};
-    final namaKlinik = klinik['nama_klinik'] ?? 'Klinik Pratama Sehat';
-    final noAnggota = klinik['no_anggota'] ?? 'Menunggu Verifikasi';
-    final status = klinik['status'] ?? 'Draft';
+    final klinik = _profileData?['klinik'] ?? _profileData ?? {};
+    final user = _profileData?['user'] ?? {};
+    final isPengurus = _profileData?['is_pengurus'] == true || user['primary_role'] == 'Superadmin';
+    final namaKlinik = klinik['nama_klinik'] ?? user['name'] ?? (isPengurus ? 'Pengurus Pusat ASKLIN' : 'Klinik ASKLIN');
+    final noAnggota = klinik['no_anggota'] ?? (isPengurus ? 'Pengurus / Administrator' : 'Menunggu Verifikasi');
+    final status = klinik['status'] ?? (isPengurus ? 'approved' : 'Draft');
     final isApproved = status.toString().toLowerCase() == 'approved';
+    final isLunas = klinik['status_pembayaran'] == '1' || klinik['is_lunas'] == true || _statusData?['is_lunas'] == true;
+    final tglSio = klinik['perijinan']?['tgl_akhir_ijin'] ?? klinik['tgl_akhir_ijin'] ?? (isPengurus ? 'Tetap / Aktif' : 'Hingga 2028');
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      body: SingleChildScrollView(
-        child: Column(
+      body: RefreshIndicator(
+        color: AppColors.primaryRed,
+        onRefresh: _loadDashboardData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
           children: [
             // Header Dasbor dengan Motif Merah Melengkung
             AsklinHeaderOrnament(
@@ -150,9 +158,9 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Dasbor Keanggotaan',
-                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                            Text(
+                              isPengurus ? 'Dasbor Pengurus / Admin' : 'Dasbor Keanggotaan',
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -196,9 +204,9 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'KARTU ANGGOTA ASKLIN',
-                              style: TextStyle(
+                            Text(
+                              isPengurus ? 'IDENTITAS PENGURUS ASKLIN' : 'KARTU ANGGOTA ASKLIN',
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primaryRed,
@@ -212,7 +220,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                klinik['jenis_klinik'] ?? 'Pratama',
+                                isPengurus ? 'Administrator' : (klinik['jenis_klinik'] ?? 'Pratama'),
                                 style: const TextStyle(
                                   color: AppColors.primaryRed,
                                   fontSize: 11,
@@ -233,7 +241,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'No. Anggota: $noAnggota',
+                          isPengurus ? 'Role: Administrator Sistem' : 'No. Anggota: $noAnggota',
                           style: const TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary,
@@ -247,10 +255,10 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Masa Berlaku SIO', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                Text(isPengurus ? 'Status Jabatan' : 'Masa Berlaku SIO', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                                 const SizedBox(height: 2),
                                 Text(
-                                  klinik['tgl_akhir_ijin'] ?? 'Hingga 2028',
+                                  isPengurus ? 'Pengurus Aktif' : tglSio,
                                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -258,14 +266,14 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                const Text('Iuran Anggota', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                Text(isPengurus ? 'Hak Akses' : 'Iuran Anggota', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                                 const SizedBox(height: 2),
                                 Text(
-                                  klinik['is_lunas'] == true ? 'LUNAS' : 'MENUNGGU',
+                                  isPengurus ? 'SUPERADMIN' : (isLunas ? 'LUNAS' : 'MENUNGGU'),
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
-                                    color: klinik['is_lunas'] == true ? AppColors.statusGreen : AppColors.statusYellow,
+                                    color: (isPengurus || isLunas) ? AppColors.statusGreen : AppColors.statusYellow,
                                   ),
                                 ),
                               ],
@@ -280,7 +288,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
             ),
 
             // Banner Lengkapi Pendaftaran Faskes jika status masih waiting, create_dokter, atau perlu perbaikan
-            if (!isApproved)
+            if (!isApproved && !isPengurus)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
@@ -433,7 +441,8 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
 

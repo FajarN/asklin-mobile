@@ -22,8 +22,9 @@ class ApiConstants {
   static const String agenda = '/agenda';
   static const String organisasi = '/organisasi/struktur';
   
-  // Pengurus Monitoring
+  // Pengurus Monitoring & Verifikasi
   static const String pengurusDashboard = '/pengurus/dashboard';
   static const String pengurusAnggota = '/pengurus/anggota';
+  static const String pengurusVerifikasi = '/pengurus/verifikasi';
 }
 

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../agenda/presentation/agenda_screen.dart';
 import '../../berita/presentation/berita_screen.dart';
 import '../../dashboard/presentation/member_dashboard_screen.dart';
 import '../../organisasi/presentation/organisasi_screen.dart';
+import '../../pengurus/presentation/pengurus_verifikasi_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({Key? key}) : super(key: key);
+  const MainNavigationScreen({super.key});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -15,21 +17,54 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
+  bool _isPengurus = false;
+  bool _isInitialized = false;
 
-  final List<Widget> _pages = const [
-    MemberDashboardScreen(), // Dasbor Keanggotaan
-    BeritaScreen(),          // Berita & Artikel
-    AgendaScreen(),          // Agenda & Kongres
-    OrganisasiScreen(),      // Direktori Organisasi (DPP/DPD/DPC)
-    ProfileScreen(),         // Profil & Pengaturan
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _checkRole();
+  }
+
+  Future<void> _checkRole() async {
+    final role = await SecureStorageService.getUserRole();
+    final roleLower = (role ?? '').toLowerCase();
+    final isPengurus = roleLower.contains('cabang') ||
+        roleLower.contains('daerah') ||
+        roleLower.contains('sekjen') ||
+        roleLower.contains('ketua') ||
+        roleLower.contains('superadmin') ||
+        roleLower.contains('pusat') ||
+        roleLower.contains('bendahara');
+
+    if (mounted) {
+      setState(() {
+        _isPengurus = isPengurus;
+        _isInitialized = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: AppColors.primaryRed)),
+      );
+    }
+
+    final List<Widget> pages = [
+      _isPengurus ? const PengurusVerifikasiScreen() : const MemberDashboardScreen(),
+      const BeritaScreen(),
+      const AgendaScreen(),
+      const OrganisasiScreen(),
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _pages,
+        children: pages,
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -52,28 +87,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           elevation: 0,
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: 'Keanggotaan',
+              icon: Icon(_isPengurus ? Icons.verified_user_outlined : Icons.dashboard_outlined),
+              activeIcon: Icon(_isPengurus ? Icons.verified_user : Icons.dashboard),
+              label: _isPengurus ? 'Verifikasi' : 'Keanggotaan',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.newspaper_outlined),
               activeIcon: Icon(Icons.newspaper),
               label: 'Berita',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.event_outlined),
               activeIcon: Icon(Icons.event),
               label: 'Agenda',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.account_tree_outlined),
               activeIcon: Icon(Icons.account_tree),
               label: 'Organisasi',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
               label: 'Profil',
@@ -84,4 +119,3 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 }
-

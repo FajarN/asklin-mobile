@@ -638,3 +638,4 @@ class _VerifikasiKlinikDetailScreenState extends State<VerifikasiKlinikDetailScr
     );
   }
 }
+

@@ -26,5 +26,11 @@ class ApiConstants {
   static const String pengurusDashboard = '/pengurus/dashboard';
   static const String pengurusAnggota = '/pengurus/anggota';
   static const String pengurusVerifikasi = '/pengurus/verifikasi';
+
+  // Pembayaran & Iuran Anggota
+  static const String pembayaranStatus = '/pembayaran/status';
+  static const String pembayaranRiwayat = '/pembayaran/riwayat';
+  static const String pembayaranKonfirmasi = '/pembayaran/konfirmasi';
+  static const String bendaharaPembayaran = '/bendahara/pembayaran';
 }
 

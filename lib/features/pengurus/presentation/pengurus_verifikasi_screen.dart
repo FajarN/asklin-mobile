@@ -5,6 +5,7 @@ import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import 'verifikasi_klinik_detail_screen.dart';
+import 'validasi_pembayaran_screen.dart';
 
 class PengurusVerifikasiScreen extends StatefulWidget {
   const PengurusVerifikasiScreen({super.key});
@@ -110,6 +111,18 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
               expandedHeight: 180,
               pinned: true,
               backgroundColor: AppColors.primaryRed,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.account_balance_wallet, color: Colors.white),
+                  tooltip: 'Validasi Iuran Bendahara',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ValidasiPembayaranScreen()),
+                    );
+                  },
+                ),
+              ],
               flexibleSpace: FlexibleSpaceBar(
                 titlePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 title: Text(
@@ -203,6 +216,65 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
                           color: Colors.blue.shade700,
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Shortcut Validasi Iuran Bendahara
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ValidasiPembayaranScreen()),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primaryRed, AppColors.primaryDarkRed],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryRed.withOpacity(0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.account_balance_wallet, color: Colors.white, size: 22),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: const [
+                                  Text(
+                                    'Validasi Iuran Anggota (Bendahara)',
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Periksa bukti transfer klinik, setujui status lunas & tolak',
+                                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 14),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 18),
 
@@ -507,3 +579,4 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
     );
   }
 }
+

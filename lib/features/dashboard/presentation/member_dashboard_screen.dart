@@ -4,6 +4,7 @@ import '../../../core/network/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import 'pendaftaran_anggota_screen.dart';
+import '../../pembayaran/presentation/konfirmasi_iuran_screen.dart';
 
 class MemberDashboardScreen extends StatefulWidget {
   const MemberDashboardScreen({Key? key}) : super(key: key);
@@ -263,20 +264,37 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                                 ),
                               ],
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(isPengurus ? 'Hak Akses' : 'Iuran Anggota', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                                const SizedBox(height: 2),
-                                Text(
-                                  isPengurus ? 'SUPERADMIN' : (isLunas ? 'LUNAS' : 'MENUNGGU'),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: (isPengurus || isLunas) ? AppColors.statusGreen : AppColors.statusYellow,
+                            InkWell(
+                              onTap: isPengurus
+                                  ? null
+                                  : () async {
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const KonfirmasiIuranScreen()),
+                                      );
+                                      _loadDashboardData();
+                                    },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(isPengurus ? 'Hak Akses' : 'Iuran Anggota', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                      if (!isPengurus) const Icon(Icons.chevron_right, size: 13, color: AppColors.textMuted),
+                                    ],
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    isPengurus ? 'SUPERADMIN' : (isLunas ? 'LUNAS' : 'MENUNGGU'),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: (isPengurus || isLunas) ? AppColors.statusGreen : AppColors.primaryRed,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -345,6 +363,109 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                       ),
                     ],
                   ),
+                ),
+              ),
+
+            // Aksi Cepat / Keuangan & Iuran
+            if (!isPengurus)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Keuangan & Iuran Anggota',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    InkWell(
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const KonfirmasiIuranScreen()),
+                        );
+                        _loadDashboardData();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(
+                            color: isLunas ? Colors.green.shade200 : AppColors.primaryRed.withOpacity(0.3),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: isLunas ? Colors.green.shade50 : AppColors.softRed,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                isLunas ? Icons.verified_user : Icons.payment,
+                                color: isLunas ? Colors.green : AppColors.primaryRed,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Konfirmasi Iuran Tahunan',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: isLunas ? Colors.green.shade100 : Colors.amber.shade100,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          isLunas ? 'LUNAS' : 'PENDING',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: isLunas ? Colors.green.shade800 : Colors.amber.shade900,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    isLunas
+                                        ? 'Status iuran lunas. Lihat mutasi dan riwayat pembayaran.'
+                                        : 'Upload struk/bukti transfer bank Mandiri ASKLIN.',
+                                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
               ),
 

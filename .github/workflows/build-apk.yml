@@ -134,16 +134,17 @@ jobs:
             --title "ASKLIN Mobile App (Release)" \
             --notes "Aplikasi Mobile Resmi ASKLIN - Asosiasi Klinik Indonesia.%0AUnduh langsung file ASKLIN.apk dan instal di perangkat Android Anda."
 
-      - name: Save Failure Log to Git Branch
+      - name: Publish Debug Log on Failure
         if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -B debug-log
-          cp build.log failure.log 2>/dev/null || true
-          git add failure.log
-          git commit -m "debug: build failure log" || true
-          git push -f origin debug-log || true
+          gh release delete debug-log --yes 2>/dev/null || true
+          git tag -d debug-log 2>/dev/null || true
+          git push origin :debug-log 2>/dev/null || true
+          gh release create debug-log build.log \
+            --title "Build Failure Debug Log" \
+            --notes "Log file for debugging build failure" 2>/dev/null || true
 
       - name: Upload Build Log on Failure
         if: failure()

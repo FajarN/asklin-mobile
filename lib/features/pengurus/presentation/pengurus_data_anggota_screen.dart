@@ -257,17 +257,17 @@ class _PengurusDataAnggotaScreenState extends State<PengurusDataAnggotaScreen> {
   }
 
   Widget _buildAnggotaDirectoryCard(dynamic item) {
-    final id = item['id'] as int;
-    final namaKlinik = item['nama_klinik'] ?? 'Klinik';
-    final noAnggota = item['no_anggota'] ?? '-';
-    final jenis = item['jenis_klinik'] ?? 'Pratama';
-    final status = item['status'] ?? 'waiting';
-    final isApproved = item['is_approved'] == true;
-    final kota = item['kota'] ?? '-';
-    final provinsi = item['provinsi'] ?? '-';
-    final pemilik = item['nama_pemilik'] ?? item['kontak'] ?? '-';
-    final isLunas = item['is_lunas'] == true;
-    final tglDaftar = item['menunggu_sejak'] ?? item['tanggal_daftar'] ?? '-';
+    final int id = item['id'] is int ? item['id'] as int : int.tryParse(item['id']?.toString() ?? '') ?? 0;
+    final String namaKlinik = (item['nama_klinik'] ?? 'Klinik').toString();
+    final String noAnggota = (item['no_anggota'] ?? '-').toString();
+    final String jenis = (item['jenis_klinik'] ?? 'Pratama').toString();
+    final String status = (item['status'] ?? 'waiting').toString();
+    final bool isApproved = item['is_approved'] == true;
+    final String kota = (item['kota'] ?? '-').toString();
+    final String provinsi = (item['provinsi'] ?? '-').toString();
+    final String pemilik = (item['nama_pemilik'] ?? item['kontak'] ?? '-').toString();
+    final bool isLunas = item['is_lunas'] == true;
+    final String tglDaftar = (item['menunggu_sejak'] ?? item['tanggal_daftar'] ?? '-').toString();
 
     return Card(
       elevation: 1.5,
@@ -425,13 +425,13 @@ class _PengurusDataAnggotaScreenState extends State<PengurusDataAnggotaScreen> {
                 children: [
                   AsklinStatusBadge(status: status, isApproved: isApproved),
                   Row(
-                    children: const [
-                      Text(
+                    children: [
+                      const Text(
                         'Lihat Profil Lengkap',
                         style: TextStyle(fontSize: 12, color: AppColors.primaryRed, fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_forward, size: 14, color: AppColors.primaryRed),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_forward, size: 14, color: AppColors.primaryRed),
                     ],
                   ),
                 ],
@@ -443,3 +443,4 @@ class _PengurusDataAnggotaScreenState extends State<PengurusDataAnggotaScreen> {
     );
   }
 }
+

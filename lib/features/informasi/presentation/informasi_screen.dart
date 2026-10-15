@@ -170,10 +170,10 @@ class _InformasiScreenState extends State<InformasiScreen> with SingleTickerProv
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: AsklinCategoryChip(
-                          label: kat['nama'],
+                          label: (kat['nama'] ?? '').toString(),
                           isSelected: isSel,
                           onTap: () {
-                            setState(() => _selectedKategoriId = kat['id']);
+                            setState(() => _selectedKategoriId = kat['id'] as int?);
                             _fetchBerita();
                           },
                         ),
@@ -222,9 +222,11 @@ class _InformasiScreenState extends State<InformasiScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildBeritaCard(Map<String, dynamic> item) {
-    final thumbUrl = item['thumb_url'];
-    final kategoriNama = item['kategori']?['nama'] ?? 'ASKLIN';
+  Widget _buildBeritaCard(dynamic item) {
+    final thumbUrl = item['thumb_url']?.toString();
+    final String kategoriNama = (item['kategori']?['nama'] ?? 'ASKLIN').toString();
+    final String slug = (item['slug'] ?? '').toString();
+    final String judul = (item['judul'] ?? '').toString();
 
     return Card(
       child: InkWell(
@@ -233,8 +235,8 @@ class _InformasiScreenState extends State<InformasiScreen> with SingleTickerProv
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => BeritaDetailScreen(
-                slug: item['slug'] ?? '',
-                judul: item['judul'] ?? '',
+                slug: slug,
+                judul: judul,
               ),
             ),
           );
@@ -384,9 +386,13 @@ class _InformasiScreenState extends State<InformasiScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildAgendaCard(Map<String, dynamic> item) {
-    final statusPill = item['status_pill'] ?? 'Pendaftaran Buka';
-    final isUpcoming = statusPill == 'Pendaftaran Buka' || statusPill == 'Sedang Berlangsung';
+  Widget _buildAgendaCard(dynamic item) {
+    final String statusPill = (item['status_pill'] ?? 'Pendaftaran Buka').toString();
+    final bool isUpcoming = statusPill == 'Pendaftaran Buka' || statusPill == 'Sedang Berlangsung';
+    final String lokasi = (item['lokasi'] ?? 'ASKLIN Pusat').toString();
+    final String judul = (item['judul'] ?? '').toString();
+    final String excerpt = (item['excerpt'] ?? '').toString();
+    final String tanggalFormatted = (item['tanggal_formatted'] ?? 'Tanggal Pelaksanaan').toString();
 
     return Card(
       child: Padding(
@@ -413,14 +419,14 @@ class _InformasiScreenState extends State<InformasiScreen> with SingleTickerProv
                   ),
                 ),
                 Text(
-                  item['lokasi'] ?? 'ASKLIN Pusat',
+                  lokasi,
                   style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
-              item['judul'] ?? '',
+              judul,
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -429,7 +435,7 @@ class _InformasiScreenState extends State<InformasiScreen> with SingleTickerProv
             ),
             const SizedBox(height: 8),
             Text(
-              item['excerpt'] ?? '',
+              excerpt,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
@@ -440,15 +446,18 @@ class _InformasiScreenState extends State<InformasiScreen> with SingleTickerProv
                 const Icon(Icons.event, size: 16, color: AppColors.primaryRed),
                 const SizedBox(width: 6),
                 Text(
-                  item['tanggal_formatted'] ?? 'Tanggal Pelaksanaan',
+                  tanggalFormatted,
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
                 ElevatedButton(
                   onPressed: () {
+                    final Map<String, dynamic> itemMap = item is Map<String, dynamic>
+                        ? item
+                        : Map<String, dynamic>.from(item as Map);
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => AgendaDetailScreen(item: item),
+                        builder: (_) => AgendaDetailScreen(item: itemMap),
                       ),
                     );
                   },
@@ -467,3 +476,4 @@ class _InformasiScreenState extends State<InformasiScreen> with SingleTickerProv
     );
   }
 }
+

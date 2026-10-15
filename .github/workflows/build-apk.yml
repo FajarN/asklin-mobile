@@ -33,21 +33,43 @@ jobs:
         run: |
           flutter create . --org org.asklin --project-name asklin_mobile --platforms android
           rm -rf test
+
+          # Restore our analysis_options & pubspec (flutter create overwrites them)
           git checkout analysis_options.yaml 2>/dev/null || true
+          git checkout pubspec.yaml 2>/dev/null || true
+          git checkout assets/ 2>/dev/null || true
 
-      - name: Configure Target SDK 34 (Android 14) & Permissions
+      - name: Configure Android App Identity & SDK
         run: |
-          # Naikkan compileSdkVersion dan targetSdkVersion ke 34 (Android 14)
-          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/' android/app/build.gradle
-          sed -i 's/targetSdkVersion .*/targetSdkVersion 34/' android/app/build.gradle
-          sed -i 's/flutter.compileSdkVersion/34/' android/app/build.gradle || true
-          sed -i 's/flutter.targetSdkVersion/34/' android/app/build.gradle || true
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          GRADLE="android/app/build.gradle"
 
-          # Tambahkan izin internet dan storage ke AndroidManifest
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"\/>' android/app/src/main/AndroidManifest.xml
+          # ===== 1. FIX APP NAME: "ASKLIN" =====
+          sed -i 's/android:label="asklin_mobile"/android:label="ASKLIN"/' "$MANIFEST"
+
+          # ===== 2. FIX targetSdkVersion & compileSdkVersion to 34 (Android 14) =====
+          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/' "$GRADLE"
+          sed -i 's/targetSdkVersion .*/targetSdkVersion 34/' "$GRADLE"
+          sed -i 's/minSdkVersion .*/minSdkVersion 21/' "$GRADLE"
+          sed -i 's/flutter\.compileSdkVersion/34/g' "$GRADLE"
+          sed -i 's/flutter\.targetSdkVersion/34/g' "$GRADLE"
+          sed -i 's/flutter\.minSdkVersion/21/g' "$GRADLE"
+
+          # ===== 3. ADD INTERNET PERMISSION =====
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"\/>' "$MANIFEST"
+
+          # ===== 4. ENSURE LAUNCHER INTENT FILTER EXISTS =====
+          # Flutter create usually includes this, but verify it's correct
+          echo "--- AndroidManifest.xml ---"
+          cat "$MANIFEST"
+          echo "--- build.gradle ---"
+          grep -E 'compileSdk|targetSdk|minSdk' "$GRADLE" || true
 
       - name: Install Dependencies
         run: flutter pub get
+
+      - name: Generate App Launcher Icons
+        run: dart run flutter_launcher_icons
 
       - name: Verify Dart Code
         run: flutter analyze lib/ || true
@@ -55,9 +77,13 @@ jobs:
       - name: Build APK Release
         run: flutter build apk --release --no-tree-shake-icons
 
+      - name: Rename APK Output
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/ASKLIN.apk
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: asklin-mobile-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: ASKLIN-release
+          path: build/app/outputs/flutter-apk/ASKLIN.apk
           if-no-files-found: error

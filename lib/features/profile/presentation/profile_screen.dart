@@ -8,7 +8,7 @@ import '../../auth/presentation/login_screen.dart';
 import 'change_password_screen.dart';
 import 'help_center_screen.dart';
 import 'about_screen.dart';
-import '../dashboard/presentation/pendaftaran_anggota_screen.dart';
+import '../../dashboard/presentation/pendaftaran_anggota_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);

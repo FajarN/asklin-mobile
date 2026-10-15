@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/widgets/common_widgets.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/common_widgets.dart';
 
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({Key? key}) : super(key: key);

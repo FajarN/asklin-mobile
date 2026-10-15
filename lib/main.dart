@@ -28,7 +28,7 @@ void main() async {
 class AsklinMobileApp extends StatelessWidget {
   final Widget initialScreen;
 
-  const AsklinMobileApp({Key? key, required this.initialScreen}) : super(key: key);
+  const AsklinMobileApp({super.key, required this.initialScreen});
 
   @override
   Widget build(BuildContext context) {

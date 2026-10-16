@@ -31,17 +31,17 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loadSavedCredentials() async {
+    final savedEmail = await SecureStorageService.getSavedEmail();
+    final savedPass = await SecureStorageService.getSavedPassword();
     final isRemembered = await SecureStorageService.isRememberMeEnabled();
-    if (isRemembered) {
-      final savedEmail = await SecureStorageService.getSavedEmail();
-      final savedPass = await SecureStorageService.getSavedPassword();
-      if (mounted && savedEmail != null && savedPass != null) {
-        setState(() {
-          _rememberMe = true;
-          _emailController.text = savedEmail;
+    if (mounted && savedEmail != null && savedEmail.isNotEmpty) {
+      setState(() {
+        _emailController.text = savedEmail;
+        if (savedPass != null && savedPass.isNotEmpty) {
           _passwordController.text = savedPass;
-        });
-      }
+        }
+        _rememberMe = isRemembered;
+      });
     }
   }
 
@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -127,10 +127,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         ],
                       ),
-                      child: const Icon(
-                        Icons.local_hospital_rounded,
-                        color: AppColors.primaryRed,
-                        size: 48,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/images/ic_launcher.png',
+                          height: 56,
+                          width: 56,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),

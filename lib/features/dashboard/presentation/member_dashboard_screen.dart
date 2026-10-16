@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
@@ -44,19 +48,49 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
 
   Future<void> _downloadDocument(String endpoint, String title) async {
     try {
-      final token = await SecureStorageService.getToken();
-      final separator = endpoint.contains('?') ? '&' : '?';
-      final url = '${ApiConstants.baseUrl}$endpoint${token != null ? '${separator}token=$token' : ''}';
-      final uri = Uri.parse(url);
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Membuka unduhan dokumen resmi $title...'),
-            backgroundColor: AppColors.statusGreen,
+            content: Text('Mengunduh berkas resmi $title...'),
+            backgroundColor: AppColors.primaryRed,
+            duration: const Duration(seconds: 2),
           ),
         );
       }
+
+      // Download file bytes directly using ApiClient with Bearer token header
+      final response = await _apiClient.dio.get<List<int>>(
+        endpoint,
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final bytes = response.data;
+      if (bytes == null || bytes.isEmpty) {
+        throw Exception('Berkas dokumen kosong atau belum tersedia');
+      }
+
+      final dir = await getApplicationDocumentsDirectory();
+      final filename = endpoint.contains('sk') ? 'SK_Anggota_ASKLIN.pdf' : 'Sertifikat_Anggota_ASKLIN.pdf';
+      final file = File('${dir.path}/$filename');
+      await file.writeAsBytes(bytes, flush: true);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Dokumen $title berhasil diunduh'),
+            backgroundColor: AppColors.statusGreen,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Buka',
+              textColor: Colors.white,
+              onPressed: () => OpenFilex.open(file.path),
+            ),
+          ),
+        );
+      }
+
+      // Directly open file using default PDF viewer
+      await OpenFilex.open(file.path);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -381,11 +415,16 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
   }
 
   Widget _buildSkPreviewCanvas(Map<String, dynamic> klinik, bool isApproved) {
-    final namaKlinik = klinik['nama_klinik'] ?? 'Klinik Anggota ASKLIN';
+    final namaKlinik = (klinik['nama_klinik'] ?? 'Klinik Anggota ASKLIN').toString().toUpperCase();
     final noAnggota = klinik['no_anggota'] ?? '3216192003-01463.1.1';
     final jenis = klinik['jenis_klinik'] ?? 'Pratama';
     final kriteria = klinik['kriteria_klinik'] ?? 'Rawat Jalan';
-    final alamat = klinik['alamat_lengkap']?['alamat_klinik'] ?? klinik['alamat_klinik'] ?? '-';
+    final rawAlamat = klinik['alamat_lengkap']?['alamat_klinik'] ?? klinik['alamat_klinik'] ?? '-';
+    final alamat = rawAlamat.toString()
+        .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), ', ')
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
     final rt = klinik['alamat_lengkap']?['rt'] ?? klinik['rt'] ?? '-';
     final rw = klinik['alamat_lengkap']?['rw'] ?? klinik['rw'] ?? '-';
     final kota = klinik['alamat_lengkap']?['kota'] ?? klinik['kota_name'] ?? 'Kabupaten Bekasi';
@@ -398,7 +437,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
 
     return Container(
       width: 480,
-      height: 720,
+      height: 750,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -422,12 +461,12 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
             ),
           ),
 
-          // Konten SK (Mengikuti format asli printsk.blade.php & PDF)
+          // Konten SK (Terletak rapi di bawah logo ASKLIN dan di atas bingkai bawah)
           Positioned(
-            left: 36,
-            right: 36,
-            top: 75,
-            bottom: 24,
+            left: 48,
+            right: 48,
+            top: 142,
+            bottom: 54,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -442,18 +481,18 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                       const SizedBox(height: 2),
                       Text(
                         '$subNo/SK-Anggota/PP-Asklin/${DateTime.now().year}',
-                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.black87),
+                        style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w600, color: Colors.black87),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
 
                 const Text(
                   'Dengan ini menyatakan bahwa Pengurus Pusat Asosiasi Klinik Indonesia yang berkedudukan di Jakarta memberikan hak keanggotaan kepada :',
-                  style: TextStyle(fontSize: 7.5, color: Colors.black87, height: 1.25),
+                  style: TextStyle(fontSize: 7.2, color: Colors.black87, height: 1.25),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 5),
 
                 // Form 1-9
                 _buildSkRow('1. Nama Klinik', namaKlinik),
@@ -465,18 +504,18 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                 _buildSkRow('7. Propinsi', prov),
                 _buildSkRow('8. No.Telp', telp),
                 _buildSkRow('9. Pemilik', '$pemilik ($badanHukum)'),
-                const SizedBox(height: 6),
+                const SizedBox(height: 5),
 
                 const Text(
                   'Dari hasil verifikasi dan survey lapangan yang dilakukan oleh Pengurus / Staff Asosiasi Klinik Indonesia (ASKLIN) Cabang / Daerah / Pusat maka berhak disyahkan menjadi anggota Asosiasi Klinik Indonesia (ASKLIN) dengan NOMOR ANGGOTA :',
-                  style: TextStyle(fontSize: 7.2, color: Colors.black87, height: 1.25),
+                  style: TextStyle(fontSize: 7.0, color: Colors.black87, height: 1.25),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 5),
 
                 // Nomor Anggota Besar di Tengah
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF2F4F7),
                       borderRadius: BorderRadius.circular(4),
@@ -484,11 +523,11 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                     ),
                     child: Text(
                       noAnggota,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: Colors.black87),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.black87),
                     ),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 5),
 
                 // Ketentuan SK
                 const Text(
@@ -498,7 +537,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                   '   c. Alamat dan kepemilikan tidak sesuai dengan yang dicantumkan\n'
                   '   d. Jika klinik tutup sementara atau permanen\n'
                   '2. Keanggotaan dapat dicabut apabila terdaftar di organisasi lain yang sejenis.',
-                  style: TextStyle(fontSize: 6.8, color: Colors.black87, height: 1.2),
+                  style: TextStyle(fontSize: 6.5, color: Colors.black87, height: 1.18),
                 ),
                 const Spacer(),
 
@@ -512,29 +551,29 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                       children: [
                         const Text(
                           'PENGURUS PUSAT ASOSIASI KLINIK INDONESIA\nKETUA UMUM',
-                          style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.bold, color: Colors.black87),
+                          style: TextStyle(fontSize: 7.2, fontWeight: FontWeight.bold, color: Colors.black87),
                         ),
                         const SizedBox(height: 2),
                         Image.asset(
                           'assets/images/ttd.png',
-                          height: 38,
+                          height: 32,
                           fit: BoxFit.contain,
                         ),
                         const SizedBox(height: 2),
                         const Text(
                           'dr. Eddi Junaidi, SpOG.,SH.,MKes',
-                          style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Colors.black87),
+                          style: TextStyle(fontSize: 8.0, fontWeight: FontWeight.bold, color: Colors.black87),
                         ),
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.all(4),
+                      padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(color: Colors.black12),
                       ),
-                      child: const Icon(Icons.qr_code_2, size: 52, color: Colors.black87),
+                      child: const Icon(Icons.qr_code_2, size: 44, color: Colors.black87),
                     ),
                   ],
                 ),
@@ -576,23 +615,23 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
 
   static Widget _buildSkRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1),
+      padding: const EdgeInsets.symmetric(vertical: 0.8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 110,
+            width: 100,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 7.5, color: Colors.black87),
+              style: const TextStyle(fontSize: 7.3, color: Colors.black87),
             ),
           ),
-          const Text(': ', style: TextStyle(fontSize: 7.5, color: Colors.black87)),
+          const Text(': ', style: TextStyle(fontSize: 7.3, color: Colors.black87)),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 7.5, fontWeight: FontWeight.w600, color: Colors.black87),
-              maxLines: 1,
+              style: const TextStyle(fontSize: 7.3, fontWeight: FontWeight.w600, color: Colors.black87),
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ),

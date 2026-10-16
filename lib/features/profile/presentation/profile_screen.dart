@@ -174,7 +174,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await _apiClient.dio.post(ApiConstants.logout);
     } catch (_) {}
-    await SecureStorageService.clearAll();
+    // Clear token & user session only, keep saved credentials
+    await SecureStorageService.clearSession();
 
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(

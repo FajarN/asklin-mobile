@@ -86,8 +86,6 @@ class _PengurusDataAnggotaScreenState extends State<PengurusDataAnggotaScreen> {
             totalApproved = int.tryParse(rawTotalApproved.toString()) ?? 0;
           } else if (rawTotal != null && rawTotal != 2693) {
             totalApproved = int.tryParse(rawTotal.toString()) ?? 0;
-          } else if (_dashboardData?['kpi_stats']?['disetujui'] != null && _dashboardData!['kpi_stats']['disetujui'] > 0) {
-            totalApproved = _dashboardData!['kpi_stats']['disetujui'];
           } else if (_userRole.toLowerCase().contains('pusat') || _userRole.toLowerCase().contains('superadmin')) {
             totalApproved = 1463; // Official verified national members
           } else {

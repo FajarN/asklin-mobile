@@ -30,6 +30,41 @@ class SecureStorageService {
     return await _storage.read(key: _userKey);
   }
 
+  static const _savedEmailKey = 'saved_login_email';
+  static const _savedPasswordKey = 'saved_login_password';
+  static const _rememberMeKey = 'remember_me_enabled';
+
+  static Future<void> saveSavedCredentials(String email, String password) async {
+    await _storage.write(key: _savedEmailKey, value: email);
+    await _storage.write(key: _savedPasswordKey, value: password);
+    await _storage.write(key: _rememberMeKey, value: 'true');
+  }
+
+  static Future<String?> getSavedEmail() async {
+    return await _storage.read(key: _savedEmailKey);
+  }
+
+  static Future<String?> getSavedPassword() async {
+    return await _storage.read(key: _savedPasswordKey);
+  }
+
+  static Future<bool> isRememberMeEnabled() async {
+    final val = await _storage.read(key: _rememberMeKey);
+    return val == 'true';
+  }
+
+  static Future<void> clearSavedCredentials() async {
+    await _storage.delete(key: _savedEmailKey);
+    await _storage.delete(key: _savedPasswordKey);
+    await _storage.delete(key: _rememberMeKey);
+  }
+
+  static Future<void> clearSession() async {
+    await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _userKey);
+    await _storage.delete(key: _roleKey);
+  }
+
   static Future<void> clearAll() async {
     await _storage.deleteAll();
   }

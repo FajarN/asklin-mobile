@@ -45,7 +45,8 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
   Future<void> _downloadDocument(String endpoint, String title) async {
     try {
       final token = await SecureStorageService.getToken();
-      final url = '${ApiConstants.baseUrl}$endpoint';
+      final separator = endpoint.contains('?') ? '&' : '?';
+      final url = '${ApiConstants.baseUrl}$endpoint${token != null ? '${separator}token=$token' : ''}';
       final uri = Uri.parse(url);
       await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (mounted) {
@@ -76,25 +77,21 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
     required bool isApproved,
     required String endpoint,
   }) {
-    final namaKlinik = klinik['nama_klinik'] ?? 'Klinik Anggota ASKLIN';
-    final noAnggota = klinik['no_anggota'] ?? 'Menunggu Pengesahan';
-    final pemilik = klinik['nama_pemilik_klinik'] ?? klinik['nama_kontak'] ?? '-';
-    final alamat = klinik['alamat_lengkap']?['alamat_klinik'] ?? klinik['alamat_klinik'] ?? '-';
-    final kota = klinik['alamat_lengkap']?['kota'] ?? klinik['kota_name'] ?? 'Indonesia';
-    final jenis = klinik['jenis_klinik'] ?? 'Klinik Pratama';
     final isSk = docType == 'sk';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (_) {
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.85,
+            maxHeight: MediaQuery.of(context).size.height * 0.90,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -108,7 +105,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
 
               // Title bar
               Row(
@@ -130,8 +127,8 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        isSk ? 'Pratinjau SK Anggota' : 'Pratinjau Sertifikat',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        isSk ? 'Pratinjau SK Anggota Resmi' : 'Pratinjau Sertifikat Anggota Resmi',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                     ],
                   ),
@@ -143,174 +140,66 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
               ),
               const SizedBox(height: 10),
 
-              // Dokumen Preview Box (Certificate frame design)
+              // Canvas Dokumen Asli dengan Background Website Resmi (Interactive Zoom & Pan)
               Expanded(
-                child: SingleChildScrollView(
-                  child: Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFCFDFD),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFD4AF37), width: 2), // Gold certificate border
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Kop Surat
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 38,
-                              height: 38,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColors.primaryRed,
-                              ),
-                              child: const Center(
-                                child: Text('A', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
-                              ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Center(
+                      child: InteractiveViewer(
+                        boundaryMargin: const EdgeInsets.all(30),
+                        minScale: 0.5,
+                        maxScale: 3.5,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SingleChildScrollView(
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: isSk
+                                  ? _buildSkPreviewCanvas(klinik, isApproved)
+                                  : _buildSertifikatPreviewCanvas(klinik, isApproved),
                             ),
-                            const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'ASOSIASI KLINIK INDONESIA',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryRed, letterSpacing: 0.8),
-                                ),
-                                Text(
-                                  'PENGURUS PUSAT (DPP ASKLIN)',
-                                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const Divider(height: 24, thickness: 1.2, color: Color(0xFFD4AF37)),
-
-                        // Judul Dokumen
-                        Text(
-                          isSk
-                              ? 'SURAT KEPUTUSAN PENGESAHAN KEANGGOTAAN'
-                              : 'SERTIFIKAT KEANGGOTAAN RESMI',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: AppColors.textPrimary, letterSpacing: 0.5),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Nomor Anggota: $noAnggota',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryRed),
-                        ),
-                        const SizedBox(height: 14),
-
-                        const Text(
-                          'Dengan ini menerangkan bahwa fasilitas pelayanan kesehatan:',
-                          style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 10),
-
-                        // Nama Klinik Highlight
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF9F9FB),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.borderSubtle),
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                namaKlinik.toUpperCase(),
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                jenis,
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryRed),
-                              ),
-                            ],
                           ),
                         ),
-                        const SizedBox(height: 14),
-
-                        // Detail Fields
-                        _buildPreviewRow('Penanggung Jawab', pemilik),
-                        _buildPreviewRow('Alamat', alamat),
-                        _buildPreviewRow('Kab / Kota', kota),
-                        _buildPreviewRow('Masa Berlaku', 'Hingga 5 Tahun (Sesuai Ketentuan)'),
-                        _buildPreviewRow('Status Legalitas', isApproved ? 'Terdaftar & Sah (Approved)' : 'Menunggu Verifikasi Pusat'),
-
-                        const Divider(height: 20),
-
-                        // Cap Digital & Tanda Tangan
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      isApproved ? Icons.verified : Icons.pending,
-                                      size: 16,
-                                      color: isApproved ? Colors.green : Colors.amber.shade800,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      isApproved ? 'TERVERIFIKASI RESMI' : 'DRAFT DOKUMEN',
-                                      style: TextStyle(
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.bold,
-                                        color: isApproved ? Colors.green.shade800 : Colors.amber.shade900,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                const Text('Ditandatangani Digital oleh Ketum DPP', style: TextStyle(fontSize: 9.5, color: AppColors.textMuted)),
-                              ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Icon(Icons.qr_code_2, size: 36, color: Colors.black87),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 8),
+
+              // Petunjuk Zoom
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.zoom_in, size: 16, color: AppColors.textMuted),
+                  SizedBox(width: 6),
+                  Text(
+                    'Cubit (pinch) atau geser layar untuk memperbesar detail dokumen resmi',
+                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
 
               // Action Buttons
               if (isApproved) ...[
                 SizedBox(
                   width: double.infinity,
-                  height: 44,
+                  height: 46,
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.download, size: 20),
-                    label: const Text('UNDUH BERKAS RESMI (PDF)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    label: const Text('UNDUH BERKAS RESMI (PDF)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.statusGreen,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                      elevation: 2,
                     ),
                     onPressed: () {
                       Navigator.pop(context);
@@ -339,7 +228,7 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
@@ -355,27 +244,363 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
     );
   }
 
-  static Widget _buildPreviewRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+  Widget _buildSertifikatPreviewCanvas(Map<String, dynamic> klinik, bool isApproved) {
+    final namaKlinik = klinik['nama_klinik'] ?? 'Klinik Anggota ASKLIN';
+    final noAnggota = klinik['no_anggota'] ?? '3216023002-00007.1.2';
+    final pj = klinik['nama_kontak'] ?? klinik['nama_pemilik_klinik'] ?? '-';
+    final alamat = klinik['alamat_lengkap']?['alamat_klinik'] ?? klinik['alamat_klinik'] ?? '-';
+    final kotaCode = klinik['id_kota']?.toString() ?? '3216023002';
+
+    return Container(
+      width: 520,
+      height: 368,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
-          const Text(': ', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-          Expanded(
+        ],
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background resmi asli dari website (public/assets/images/sertifikat.jpg)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              'assets/images/sertifikat.jpg',
+              fit: BoxFit.fill,
+            ),
+          ),
+
+          // Kode Wilayah (Pojok Kiri Atas)
+          Positioned(
+            left: 42,
+            top: 40,
             child: Text(
-              value,
-              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              'Kode : $kotaCode',
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+          ),
+
+          // "Diberikan Kepada :"
+          const Positioned(
+            left: 0,
+            right: 0,
+            top: 136,
+            child: Text(
+              'Diberikan Kepada :',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+          ),
+
+          // Data Klinik
+          Positioned(
+            left: 46,
+            right: 46,
+            top: 160,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCertRow('Nama Klinik', namaKlinik, isBold: true),
+                const SizedBox(height: 3),
+                _buildCertRow('No. Anggota', noAnggota, isBold: true),
+                const SizedBox(height: 3),
+                _buildCertRow('Penanggung Jawab', pj, isBold: true),
+                const SizedBox(height: 3),
+                _buildCertRow('Alamat', alamat, isBold: false),
+              ],
+            ),
+          ),
+
+          // Berlaku (Kiri Bawah)
+          Positioned(
+            left: 42,
+            bottom: 24,
+            child: Text(
+              'Berlaku : ${DateTime.now().year - 2} - ${DateTime.now().year + 3}',
+              style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w600, color: Colors.black87),
+            ),
+          ),
+
+          // Pengurus Pusat & TTD (Tengah Bawah)
+          Positioned(
+            left: 140,
+            right: 140,
+            bottom: 18,
+            child: Column(
+              children: [
+                const Text(
+                  'Pengurus Pusat Asosiasi Klinik Indonesia (ASKLIN)',
+                  style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Colors.black87),
+                  textAlign: TextAlign.center,
+                ),
+                const Text(
+                  'Ketua Umum',
+                  style: TextStyle(fontSize: 8.5, color: Colors.black87),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 2),
+                Image.asset(
+                  'assets/images/ttd.png',
+                  height: 34,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'dr. Eddi Junaidi, SpOG.,SH.,MKes',
+                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black87),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+
+          // QR Code Keabsahan (Kanan Bawah)
+          Positioned(
+            right: 42,
+            bottom: 22,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.black12),
+              ),
+              child: const Icon(Icons.qr_code_2, size: 48, color: Colors.black87),
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildSkPreviewCanvas(Map<String, dynamic> klinik, bool isApproved) {
+    final namaKlinik = klinik['nama_klinik'] ?? 'Klinik Anggota ASKLIN';
+    final noAnggota = klinik['no_anggota'] ?? '3216192003-01463.1.1';
+    final jenis = klinik['jenis_klinik'] ?? 'Pratama';
+    final kriteria = klinik['kriteria_klinik'] ?? 'Rawat Jalan';
+    final alamat = klinik['alamat_lengkap']?['alamat_klinik'] ?? klinik['alamat_klinik'] ?? '-';
+    final rt = klinik['alamat_lengkap']?['rt'] ?? klinik['rt'] ?? '-';
+    final rw = klinik['alamat_lengkap']?['rw'] ?? klinik['rw'] ?? '-';
+    final kota = klinik['alamat_lengkap']?['kota'] ?? klinik['kota_name'] ?? 'Kabupaten Bekasi';
+    final prov = klinik['alamat_lengkap']?['provinsi'] ?? klinik['provinsi_name'] ?? 'Jawa Barat';
+    final telp = klinik['tlf_klinik'] ?? klinik['no_telp'] ?? '-';
+    final pemilik = klinik['nama_pemilik_klinik'] ?? klinik['nama_kontak'] ?? '-';
+    final badanHukum = klinik['bentuk_badan_usaha'] ?? 'Perorangan / Badan Usaha';
+
+    final subNo = noAnggota.contains('-') ? noAnggota.split('-').last : '001';
+
+    return Container(
+      width: 480,
+      height: 720,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background resmi asli dari website (public/assets/images/skanggota.jpg)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              'assets/images/skanggota.jpg',
+              fit: BoxFit.fill,
+            ),
+          ),
+
+          // Konten SK (Mengikuti format asli printsk.blade.php & PDF)
+          Positioned(
+            left: 36,
+            right: 36,
+            top: 75,
+            bottom: 24,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Judul SK
+                Center(
+                  child: Column(
+                    children: [
+                      const Text(
+                        'SURAT KEPUTUSAN ANGGOTA ASKLIN',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$subNo/SK-Anggota/PP-Asklin/${DateTime.now().year}',
+                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                const Text(
+                  'Dengan ini menyatakan bahwa Pengurus Pusat Asosiasi Klinik Indonesia yang berkedudukan di Jakarta memberikan hak keanggotaan kepada :',
+                  style: TextStyle(fontSize: 7.5, color: Colors.black87, height: 1.25),
+                ),
+                const SizedBox(height: 6),
+
+                // Form 1-9
+                _buildSkRow('1. Nama Klinik', namaKlinik),
+                _buildSkRow('2. Jenis Klinik', jenis),
+                _buildSkRow('3. Kriteria Klinik', kriteria),
+                _buildSkRow('4. Alamat', alamat),
+                _buildSkRow('5. RT/RW', '$rt / $rw'),
+                _buildSkRow('6. Kabupaten/Kota', kota),
+                _buildSkRow('7. Propinsi', prov),
+                _buildSkRow('8. No.Telp', telp),
+                _buildSkRow('9. Pemilik', '$pemilik ($badanHukum)'),
+                const SizedBox(height: 6),
+
+                const Text(
+                  'Dari hasil verifikasi dan survey lapangan yang dilakukan oleh Pengurus / Staff Asosiasi Klinik Indonesia (ASKLIN) Cabang / Daerah / Pusat maka berhak disyahkan menjadi anggota Asosiasi Klinik Indonesia (ASKLIN) dengan NOMOR ANGGOTA :',
+                  style: TextStyle(fontSize: 7.2, color: Colors.black87, height: 1.25),
+                ),
+                const SizedBox(height: 6),
+
+                // Nomor Anggota Besar di Tengah
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F4F7),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.black26),
+                    ),
+                    child: Text(
+                      noAnggota,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: Colors.black87),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+
+                // Ketentuan SK
+                const Text(
+                  '1. Keanggotaan dapat dibekukan apabila :\n'
+                  '   a. Tidak mematuhi peraturan dan ketentuan Perundang-undangan Negara RI yang berlaku\n'
+                  '   b. Tidak mematuhi peraturan organisasi Asosiasi Klinik Indonesia (ASKLIN)\n'
+                  '   c. Alamat dan kepemilikan tidak sesuai dengan yang dicantumkan\n'
+                  '   d. Jika klinik tutup sementara atau permanen\n'
+                  '2. Keanggotaan dapat dicabut apabila terdaftar di organisasi lain yang sejenis.',
+                  style: TextStyle(fontSize: 6.8, color: Colors.black87, height: 1.2),
+                ),
+                const Spacer(),
+
+                // Tanda Tangan & QR Code Bagian Bawah
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'PENGURUS PUSAT ASOSIASI KLINIK INDONESIA\nKETUA UMUM',
+                          style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.bold, color: Colors.black87),
+                        ),
+                        const SizedBox(height: 2),
+                        Image.asset(
+                          'assets/images/ttd.png',
+                          height: 38,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'dr. Eddi Junaidi, SpOG.,SH.,MKes',
+                          style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Colors.black87),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.black12),
+                      ),
+                      child: const Icon(Icons.qr_code_2, size: 52, color: Colors.black87),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _buildCertRow(String label, String value, {bool isBold = false}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 125,
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 9.5, color: Colors.black87),
+          ),
+        ),
+        const Text(': ', style: TextStyle(fontSize: 9.5, color: Colors.black87)),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 9.5,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: Colors.black87,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  static Widget _buildSkRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 7.5, color: Colors.black87),
+            ),
+          ),
+          const Text(': ', style: TextStyle(fontSize: 7.5, color: Colors.black87)),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 7.5, fontWeight: FontWeight.w600, color: Colors.black87),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {

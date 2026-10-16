@@ -19,9 +19,31 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _rememberMe = true;
   String _selectedRole = 'Anggota Klinik'; // Tab selector
 
   final _apiClient = ApiClient();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final isRemembered = await SecureStorageService.isRememberMeEnabled();
+    if (isRemembered) {
+      final savedEmail = await SecureStorageService.getSavedEmail();
+      final savedPass = await SecureStorageService.getSavedPassword();
+      if (mounted && savedEmail != null && savedPass != null) {
+        setState(() {
+          _rememberMe = true;
+          _emailController.text = savedEmail;
+          _passwordController.text = savedPass;
+        });
+      }
+    }
+  }
 
   Future<void> _handleLogin() async {
     final email = _emailController.text.trim();
@@ -53,6 +75,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
         await SecureStorageService.saveToken(token);
         await SecureStorageService.saveUserRole(role);
+
+        if (_rememberMe) {
+          await SecureStorageService.saveSavedCredentials(email, password);
+        } else {
+          await SecureStorageService.clearSavedCredentials();
+        }
 
         if (!mounted) return;
         Navigator.of(context).pushReplacement(
@@ -200,7 +228,36 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 14),
+
+                  // Opsi Simpan Password / Ingat Saya
+                  Row(
+                    children: [
+                      SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: Checkbox(
+                          value: _rememberMe,
+                          activeColor: AppColors.primaryRed,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          onChanged: (val) => setState(() => _rememberMe = val ?? true),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => setState(() => _rememberMe = !_rememberMe),
+                        child: const Text(
+                          'Simpan Password & Akun (Ingat Saya)',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
 
                   // Tombol Masuk
                   AsklinPrimaryButton(

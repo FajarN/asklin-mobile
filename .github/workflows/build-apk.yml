@@ -105,7 +105,7 @@ jobs:
       - name: Verify Dart Code
         run: |
           echo "=== RUNNING FLUTTER ANALYZE ==="
-          flutter analyze lib/ || true
+          flutter analyze lib/
 
       - name: Build APK Release
         run: |

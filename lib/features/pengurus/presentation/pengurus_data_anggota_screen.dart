@@ -20,16 +20,13 @@ class _PengurusDataAnggotaScreenState extends State<PengurusDataAnggotaScreen> {
   bool _isLoading = true;
   String _userRole = 'Pengurus ASKLIN';
   List<dynamic> _anggotaList = [];
-  String _selectedStatus = ''; // '' = Semua, 'approved', 'waiting', dsb.
-  String? _selectedJenis;
+  String _selectedJenis = ''; // '' = Semua, 'Pratama', 'Utama'
   int _totalCount = 0;
 
-  final List<Map<String, String>> _statusChips = const [
-    {'label': 'Semua Data', 'value': ''},
-    {'label': 'Anggota Aktif (Approved)', 'value': 'approved'},
-    {'label': 'Menunggu Verifikasi', 'value': 'waiting'},
-    {'label': 'Diverifikasi Cabang', 'value': 'Diverifikasi Cabang'},
-    {'label': 'Perlu Perbaikan', 'value': 'Perlu Perbaikan'},
+  final List<Map<String, String>> _jenisChips = const [
+    {'label': 'Semua Anggota Sah', 'value': ''},
+    {'label': 'Klinik Pratama', 'value': 'Pratama'},
+    {'label': 'Klinik Utama', 'value': 'Utama'},
   ];
 
   @override
@@ -58,18 +55,15 @@ class _PengurusDataAnggotaScreenState extends State<PengurusDataAnggotaScreen> {
     setState(() => _isLoading = true);
     try {
       final queryParams = <String, dynamic>{
-        'per_page': 50,
+        'mode': 'anggota',
+        'per_page': 100,
       };
 
       if (_searchController.text.trim().isNotEmpty) {
         queryParams['search'] = _searchController.text.trim();
       }
 
-      if (_selectedStatus.isNotEmpty) {
-        queryParams['status'] = _selectedStatus;
-      }
-
-      if (_selectedJenis != null) {
+      if (_selectedJenis.isNotEmpty) {
         queryParams['jenis_klinik'] = _selectedJenis;
       }
 
@@ -82,8 +76,9 @@ class _PengurusDataAnggotaScreenState extends State<PengurusDataAnggotaScreen> {
         final list = res.data['data'] as List<dynamic>? ?? [];
         final meta = res.data['meta'] as Map<String, dynamic>?;
         setState(() {
-          _anggotaList = list;
-          _totalCount = meta?['total'] ?? list.length;
+          // Strictly keep only approved members with member numbers
+          _anggotaList = list.where((item) => (item['status'] ?? '').toString().toLowerCase() == 'approved').toList();
+          _totalCount = meta?['total_approved'] ?? meta?['total'] ?? _anggotaList.length;
           _isLoading = false;
         });
       } else {
@@ -183,12 +178,12 @@ class _PengurusDataAnggotaScreenState extends State<PengurusDataAnggotaScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Status Chips
+                  // Filter Jenis Klinik (Khusus Anggota Sah)
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: _statusChips.map((chip) {
-                        final isSel = _selectedStatus == chip['value'];
+                      children: _jenisChips.map((chip) {
+                        final isSel = _selectedJenis == chip['value'];
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: FilterChip(
@@ -196,7 +191,7 @@ class _PengurusDataAnggotaScreenState extends State<PengurusDataAnggotaScreen> {
                             selected: isSel,
                             onSelected: (val) {
                               setState(() {
-                                _selectedStatus = chip['value']!;
+                                _selectedJenis = chip['value']!;
                               });
                               _fetchDataAnggota();
                             },

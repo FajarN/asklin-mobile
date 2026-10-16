@@ -389,65 +389,74 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
                 ],
               ),
 
-              // Aksi Kontak Khusus Pengurus Pusat
-              if (canViewContact && noTelp != null && noTelp.isNotEmpty) ...[
+              // Aksi Kontak Khusus Pengurus Pusat (Hanya WhatsApp dan Email, tanpa nomor default)
+              if (canViewContact) ...[
                 const Divider(height: 16),
                 Row(
                   children: [
                     const Icon(Icons.phone_android, size: 14, color: AppColors.textMuted),
                     const SizedBox(width: 4),
                     Text(
-                      noTelp,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                      (noTelp != null && noTelp.isNotEmpty) ? noTelp : 'Belum diisi',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: (noTelp != null && noTelp.isNotEmpty) ? FontWeight.w600 : FontWeight.normal,
+                        fontStyle: (noTelp != null && noTelp.isNotEmpty) ? FontStyle.normal : FontStyle.italic,
+                        color: (noTelp != null && noTelp.isNotEmpty) ? AppColors.textPrimary : AppColors.textMuted,
+                      ),
                     ),
                     const Spacer(),
-                    // Tombol WhatsApp
-                    InkWell(
-                      onTap: () {
-                        final cleanPhone = noTelp.replaceAll(RegExp(r'[^0-9]'), '');
-                        final formatted = cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
-                        _launchHelper('https://wa.me/$formatted');
-                      },
-                      borderRadius: BorderRadius.circular(6),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE6F4EA),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFF34A853).withOpacity(0.4)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.chat, size: 13, color: Color(0xFF137333)),
-                            SizedBox(width: 4),
-                            Text('WhatsApp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF137333))),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    // Tombol Telepon
-                    InkWell(
-                      onTap: () => _launchHelper('tel:$noTelp'),
-                      borderRadius: BorderRadius.circular(6),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.softRed,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.primaryRed.withOpacity(0.3)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.call, size: 13, color: AppColors.primaryRed),
-                            SizedBox(width: 4),
-                            Text('Telepon', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryRed)),
-                          ],
+                    // Tombol WhatsApp (Hanya jika noTelp ada)
+                    if (noTelp != null && noTelp.isNotEmpty) ...[
+                      InkWell(
+                        onTap: () {
+                          final cleanPhone = noTelp.replaceAll(RegExp(r'[^0-9]'), '');
+                          final formatted = cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
+                          _launchHelper('https://wa.me/$formatted');
+                        },
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE6F4EA),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFF34A853).withOpacity(0.4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.chat, size: 13, color: Color(0xFF137333)),
+                              SizedBox(width: 4),
+                              Text('WhatsApp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF137333))),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 6),
+                    ],
+                    // Tombol Email (Hanya jika email ada)
+                    if (email != null && email.isNotEmpty) ...[
+                      InkWell(
+                        onTap: () => _launchHelper('mailto:$email'),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.softRed,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.primaryRed.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.email_outlined, size: 13, color: AppColors.primaryRed),
+                              SizedBox(width: 4),
+                              Text('Email', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryRed)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -567,43 +576,46 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
               const SizedBox(height: 16),
               Text('Periode: $periode', style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
               const SizedBox(height: 6),
-              Text('Alamat: $alamat', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Text('Alamat: ${alamat.isNotEmpty ? alamat : 'Belum diisi'}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: 6),
-              Text('Email: $email', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Text('Email: ${email.isNotEmpty && !email.contains('asklin.org') ? email : (email.isNotEmpty ? email : 'Belum diisi')}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: 6),
-              Text('Kontak: $telp', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Text('Kontak / No. Telp: ${telp.isNotEmpty && !telp.contains('Hubungi') ? telp : 'Belum diisi'}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: 16),
 
-              if (isPengurusPusat && telp.isNotEmpty && !telp.contains('Hubungi')) ...[
+              if (isPengurusPusat && (telp.isNotEmpty && !telp.contains('Hubungi') || email.isNotEmpty)) ...[
                 Row(
                   children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.chat, size: 18),
-                        label: const Text('WhatsApp'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF25D366),
-                          foregroundColor: Colors.white,
+                    if (telp.isNotEmpty && !telp.contains('Hubungi'))
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.chat, size: 18),
+                          label: const Text('WhatsApp'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF25D366),
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () {
+                            final cleanPhone = telp.replaceAll(RegExp(r'[^0-9]'), '');
+                            final formatted = cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
+                            _launchHelper('https://wa.me/$formatted');
+                          },
                         ),
-                        onPressed: () {
-                          final cleanPhone = telp.replaceAll(RegExp(r'[^0-9]'), '');
-                          final formatted = cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
-                          _launchHelper('https://wa.me/$formatted');
-                        },
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.call, size: 18),
-                        label: const Text('Telepon'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryRed,
-                          foregroundColor: Colors.white,
+                    if (telp.isNotEmpty && !telp.contains('Hubungi') && email.isNotEmpty)
+                      const SizedBox(width: 10),
+                    if (email.isNotEmpty)
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.email_outlined, size: 18),
+                          label: const Text('Kirim Email'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryRed,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () => _launchHelper('mailto:$email'),
                         ),
-                        onPressed: () => _launchHelper('tel:$telp'),
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 10),

@@ -25,14 +25,15 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen>
   Map<String, dynamic>? _dashboardData;
   List<dynamic> _anggotaList = [];
   String _selectedStatusFilter = ''; // Kosong = Semua
+  int _totalUnverifiedCount = 0;
 
   final List<Map<String, String>> _statusFilters = const [
-    {'label': 'Semua', 'value': ''},
-    {'label': 'Menunggu Cabang', 'value': 'waiting'},
-    {'label': 'Diverifikasi Cabang', 'value': 'Diverifikasi Cabang'},
-    {'label': 'Verifikasi Sekjen', 'value': 'Verifikasi Sekjen'},
+    {'label': 'Semua Belum Disetujui', 'value': ''},
+    {'label': 'Menunggu (Waiting)', 'value': 'waiting'},
+    {'label': 'Terverifikasi Cabang', 'value': 'Terverifikasi Cabang'},
+    {'label': 'Proses Input Data', 'value': 'proses'},
+    {'label': 'Belum Lengkap (Dokter)', 'value': 'create_dokter'},
     {'label': 'Perlu Perbaikan', 'value': 'Perlu Perbaikan'},
-    {'label': 'Disetujui (Approved)', 'value': 'approved'},
   ];
 
   @override
@@ -81,7 +82,10 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen>
 
   Future<void> _loadAnggotaList() async {
     try {
-      final queryParams = <String, dynamic>{};
+      final queryParams = <String, dynamic>{
+        'mode': 'verifikasi',
+        'per_page': 100,
+      };
       if (_selectedStatusFilter.isNotEmpty) {
         queryParams['status'] = _selectedStatusFilter;
       }
@@ -95,8 +99,12 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen>
       );
 
       if (res.data['success'] == true) {
+        final list = res.data['data'] as List<dynamic>? ?? [];
+        final meta = res.data['meta'] as Map<String, dynamic>?;
         setState(() {
-          _anggotaList = res.data['data'] as List<dynamic>;
+          // Pastikan hanya data belum approve yang tampil
+          _anggotaList = list.where((item) => (item['status'] ?? '').toString().toLowerCase() != 'approved').toList();
+          _totalUnverifiedCount = meta?['total_unverified'] ?? meta?['total'] ?? _anggotaList.length;
         });
       }
     } catch (_) {}
@@ -200,21 +208,21 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen>
           ),
           const SizedBox(height: 14),
 
-          // KPI Ringkasan
+          // KPI Ringkasan Antrean Belum Diverifikasi
           Row(
             children: [
               _buildKpiCard(
-                label: 'Menunggu',
-                value: (kpi['menunggu_verifikasi'] ?? 0).toString(),
-                icon: Icons.hourglass_top,
-                color: Colors.amber.shade700,
+                label: 'Belum Diverifikasi',
+                value: (_totalUnverifiedCount > 0 ? _totalUnverifiedCount : (kpi['menunggu_verifikasi'] ?? 0)).toString(),
+                icon: Icons.pending_actions,
+                color: AppColors.primaryRed,
               ),
               const SizedBox(width: 8),
               _buildKpiCard(
-                label: 'Disetujui',
-                value: (kpi['terverifikasi_sah'] ?? 0).toString(),
-                icon: Icons.check_circle_outline,
-                color: AppColors.statusGreen,
+                label: 'Menunggu (Waiting)',
+                value: (kpi['menunggu_verifikasi'] ?? 0).toString(),
+                icon: Icons.hourglass_top,
+                color: Colors.amber.shade700,
               ),
               const SizedBox(width: 8),
               _buildKpiCard(
@@ -256,6 +264,29 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen>
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             onSubmitted: (_) => _loadAnggotaList(),
+          ),
+          const SizedBox(height: 10),
+
+          // Info Banner Total Antrean
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.softRed,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.primaryRed.withOpacity(0.2)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, size: 16, color: AppColors.primaryRed),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Menampilkan klinik yang belum disahkan / belum memiliki Nomor Anggota (Total: $_totalUnverifiedCount Faskes)',
+                    style: const TextStyle(fontSize: 11.5, color: AppColors.primaryRed, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
 

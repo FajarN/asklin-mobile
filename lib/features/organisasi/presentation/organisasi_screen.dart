@@ -278,6 +278,7 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
     final String nama = p['nama_lengkap'] ?? '';
     final String? parentJabatan = p['parent_jabatan'];
     final String? noTelp = p['no_telp'];
+    final String? email = p['email'];
     final bool canViewContact = p['can_view_contact'] == true;
 
     // Margin kiri berdasarkan level tree

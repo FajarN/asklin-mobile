@@ -582,7 +582,7 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
-                        color: isApproved ? AppColors.statusGreen : Colors.amber.shade950,
+                        color: isApproved ? AppColors.statusGreen : Colors.amber.shade900,
                       ),
                     ),
                   ),

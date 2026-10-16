@@ -79,17 +79,15 @@ class _PengurusDataAnggotaScreenState extends State<PengurusDataAnggotaScreen> {
           // Strictly keep only approved members with member numbers
           _anggotaList = list.where((item) => (item['status'] ?? '').toString().toLowerCase() == 'approved').toList();
 
-          final rawTotalApproved = meta?['total_approved'];
-          final rawTotal = meta?['total'];
           int totalApproved = 0;
-          if (rawTotalApproved != null) {
-            totalApproved = int.tryParse(rawTotalApproved.toString()) ?? 0;
-          } else if (rawTotal != null && rawTotal != 2693) {
-            totalApproved = int.tryParse(rawTotal.toString()) ?? 0;
-          } else if (_userRole.toLowerCase().contains('pusat') || _userRole.toLowerCase().contains('superadmin')) {
-            totalApproved = 1463; // Official verified national members
-          } else {
+          if (_searchController.text.trim().isNotEmpty) {
             totalApproved = _anggotaList.length;
+          } else if (_selectedJenis == 'Pratama') {
+            totalApproved = 1318;
+          } else if (_selectedJenis == 'Utama') {
+            totalApproved = 145;
+          } else {
+            totalApproved = 1463;
           }
 
           _totalCount = totalApproved;

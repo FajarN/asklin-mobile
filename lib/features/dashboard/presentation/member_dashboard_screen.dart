@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
+import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import 'pendaftaran_anggota_screen.dart';
@@ -40,78 +42,338 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
     }
   }
 
-  void _showDocumentDialog({
+  Future<void> _downloadDocument(String endpoint, String title) async {
+    try {
+      final token = await SecureStorageService.getToken();
+      final url = '${ApiConstants.baseUrl}$endpoint';
+      final uri = Uri.parse(url);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Membuka unduhan dokumen resmi $title...'),
+            backgroundColor: AppColors.statusGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengunduh berkas dokumen: $e'),
+            backgroundColor: AppColors.statusRed,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showDocumentPreviewModal({
     required BuildContext context,
+    required String docType, // 'sk' or 'sertifikat'
     required String title,
+    required Map<String, dynamic> klinik,
     required bool isApproved,
     required String endpoint,
   }) {
+    final namaKlinik = klinik['nama_klinik'] ?? 'Klinik Anggota ASKLIN';
+    final noAnggota = klinik['no_anggota'] ?? 'Menunggu Pengesahan';
+    final pemilik = klinik['nama_pemilik_klinik'] ?? klinik['nama_kontak'] ?? '-';
+    final alamat = klinik['alamat_lengkap']?['alamat_klinik'] ?? klinik['alamat_klinik'] ?? '-';
+    final kota = klinik['alamat_lengkap']?['kota'] ?? klinik['kota_name'] ?? 'Indonesia';
+    final jenis = klinik['jenis_klinik'] ?? 'Klinik Pratama';
+    final isSk = docType == 'sk';
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) {
         return Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Drag handle
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Title bar
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
-                      color: AppColors.softRed,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.picture_as_pdf, color: AppColors.primaryRed, size: 28),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isApproved ? const Color(0xFFE8F5E9) : AppColors.softRed,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isSk ? Icons.assignment : Icons.verified,
+                          color: isApproved ? AppColors.statusGreen : AppColors.primaryRed,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        isSk ? 'Pratinjau SK Anggota' : 'Pratinjau Sertifikat',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Text(
-                isApproved
-                    ? 'Dokumen resmi Anda telah diterbitkan oleh Pengurus Pusat ASKLIN dan siap untuk diunduh dalam format PDF asli.'
-                    : 'Dokumen ini baru dapat diunduh setelah keanggotaan Anda disetujui (Approved) oleh Pengurus Pusat ASKLIN.',
-                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
-              ),
-              const SizedBox(height: 24),
-              if (isApproved)
-                AsklinPrimaryButton(
-                  text: 'UNDUH DOKUMEN PDF',
-                  icon: Icons.download,
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Mengunduh $title dari server ASKLIN...'),
-                        backgroundColor: AppColors.statusGreen,
-                      ),
-                    );
-                  },
-                )
-              else
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade400),
-                    child: const Text('TUTUP', style: TextStyle(color: Colors.white)),
+              const SizedBox(height: 10),
+
+              // Dokumen Preview Box (Certificate frame design)
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFCFDFD),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFD4AF37), width: 2), // Gold certificate border
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Kop Surat
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.primaryRed,
+                              ),
+                              child: const Center(
+                                child: Text('A', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'ASOSIASI KLINIK INDONESIA',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryRed, letterSpacing: 0.8),
+                                ),
+                                Text(
+                                  'PENGURUS PUSAT (DPP ASKLIN)',
+                                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 24, thickness: 1.2, color: Color(0xFFD4AF37)),
+
+                        // Judul Dokumen
+                        Text(
+                          isSk
+                              ? 'SURAT KEPUTUSAN PENGESAHAN KEANGGOTAAN'
+                              : 'SERTIFIKAT KEANGGOTAAN RESMI',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: AppColors.textPrimary, letterSpacing: 0.5),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Nomor Anggota: $noAnggota',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryRed),
+                        ),
+                        const SizedBox(height: 14),
+
+                        const Text(
+                          'Dengan ini menerangkan bahwa fasilitas pelayanan kesehatan:',
+                          style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Nama Klinik Highlight
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9F9FB),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.borderSubtle),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                namaKlinik.toUpperCase(),
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                jenis,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryRed),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Detail Fields
+                        _buildPreviewRow('Penanggung Jawab', pemilik),
+                        _buildPreviewRow('Alamat', alamat),
+                        _buildPreviewRow('Kab / Kota', kota),
+                        _buildPreviewRow('Masa Berlaku', 'Hingga 5 Tahun (Sesuai Ketentuan)'),
+                        _buildPreviewRow('Status Legalitas', isApproved ? 'Terdaftar & Sah (Approved)' : 'Menunggu Verifikasi Pusat'),
+
+                        const Divider(height: 20),
+
+                        // Cap Digital & Tanda Tangan
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      isApproved ? Icons.verified : Icons.pending,
+                                      size: 16,
+                                      color: isApproved ? Colors.green : Colors.amber.shade800,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      isApproved ? 'TERVERIFIKASI RESMI' : 'DRAFT DOKUMEN',
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: isApproved ? Colors.green.shade800 : Colors.amber.shade900,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                const Text('Ditandatangani Digital oleh Ketum DPP', style: TextStyle(fontSize: 9.5, color: AppColors.textMuted)),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(Icons.qr_code_2, size: 36, color: Colors.black87),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+              ),
+              const SizedBox(height: 14),
+
+              // Action Buttons
+              if (isApproved) ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.download, size: 20),
+                    label: const Text('UNDUH BERKAS RESMI (PDF)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.statusGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _downloadDocument(endpoint, title);
+                    },
+                  ),
+                ),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 18, color: Colors.amber.shade800),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Dokumen PDF resmi baru dapat diunduh setelah status klinik disetujui (Approved) dan iuran diverifikasi lunas.',
+                          style: TextStyle(fontSize: 11, color: Colors.black87),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('TUTUP PREVIEW', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
             ],
           ),
         );
       },
+    );
+  }
+
+  static Widget _buildPreviewRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+          ),
+          const Text(': ', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -493,9 +755,11 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                           icon: Icons.assignment_outlined,
                           isReady: true,
                           onTap: () {
-                            _showDocumentDialog(
+                            _showDocumentPreviewModal(
                               context: context,
+                              docType: 'sk',
                               title: 'Surat Keputusan (SK) Anggota',
+                              klinik: klinik,
                               isApproved: isApproved,
                               endpoint: ApiConstants.downloadSk,
                             );
@@ -510,9 +774,11 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                           icon: Icons.verified_outlined,
                           isReady: true,
                           onTap: () {
-                            _showDocumentDialog(
+                            _showDocumentPreviewModal(
                               context: context,
+                              docType: 'sertifikat',
                               title: 'Sertifikat Keanggotaan ASKLIN',
+                              klinik: klinik,
                               isApproved: isApproved,
                               endpoint: ApiConstants.downloadSertifikat,
                             );

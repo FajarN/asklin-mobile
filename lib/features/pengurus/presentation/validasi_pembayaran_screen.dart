@@ -5,7 +5,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 
 class ValidasiPembayaranScreen extends StatefulWidget {
-  const ValidasiPembayaranScreen({Key? key}) : super(key: key);
+  final bool isEmbedded;
+  const ValidasiPembayaranScreen({Key? key, this.isEmbedded = false}) : super(key: key);
 
   @override
   State<ValidasiPembayaranScreen> createState() => _ValidasiPembayaranScreenState();
@@ -276,62 +277,90 @@ class _ValidasiPembayaranScreenState extends State<ValidasiPembayaranScreen> {
       body: Column(
         children: [
           // Header
-          AsklinHeaderOrnament(
-            height: 180,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const Expanded(
-                          child: Text(
-                            'Validasi Pembayaran (Bendahara)',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
+          if (widget.isEmbedded)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              color: Colors.white,
+              child: Row(
+                children: [
+                  _buildKpiPill('Pending: $pendingCount', Colors.amber.shade700),
+                  const SizedBox(width: 8),
+                  _buildKpiPill('Lunas: $lunasCount', Colors.green.shade700),
+                  const Spacer(),
+                  Text(
+                    nominalLunasRupiah,
+                    style: const TextStyle(
+                      color: AppColors.primaryRed,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 20, color: AppColors.primaryRed),
+                    tooltip: 'Muat Ulang',
+                    onPressed: _loadData,
+                  ),
+                ],
+              ),
+            )
+          else
+            AsklinHeaderOrnament(
+              height: 180,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const Expanded(
+                            child: Text(
+                              'Validasi Pembayaran (Bendahara)',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.refresh, color: Colors.white),
-                          tooltip: 'Muat Ulang',
-                          onPressed: _loadData,
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      child: Row(
-                        children: [
-                          _buildKpiPill('Pending: $pendingCount', Colors.amber.shade400),
-                          const SizedBox(width: 8),
-                          _buildKpiPill('Lunas: $lunasCount', Colors.green.shade400),
-                          const Spacer(),
-                          Text(
-                            nominalLunasRupiah,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
+                          IconButton(
+                            icon: const Icon(Icons.refresh, color: Colors.white),
+                            tooltip: 'Muat Ulang',
+                            onPressed: _loadData,
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const Spacer(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        child: Row(
+                          children: [
+                            _buildKpiPill('Pending: $pendingCount', Colors.amber.shade400),
+                            const SizedBox(width: 8),
+                            _buildKpiPill('Lunas: $lunasCount', Colors.green.shade400),
+                            const Spacer(),
+                            Text(
+                              nominalLunasRupiah,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
           // Search Bar & Filter Chips
           Padding(

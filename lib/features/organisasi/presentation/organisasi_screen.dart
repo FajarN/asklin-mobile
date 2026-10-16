@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
@@ -30,13 +31,22 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
         ApiConstants.organisasi,
         queryParameters: {'tingkat': _tingkat},
       );
-      setState(() {
-        _organisasiData = res.data['data'];
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _organisasiData = res.data['data'];
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _launchHelper(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
   }
 
   @override
@@ -128,12 +138,15 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
   Widget _buildPusatContent() {
     final detail = _organisasiData?['detail'] ?? {};
     final pengurus = _organisasiData?['pengurus'] as List? ?? [];
+    final isPengurusPusat = _organisasiData?['is_pengurus_pusat'] == true;
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         // Card Sekretariat Pusat
         Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+          elevation: 1,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -141,84 +154,314 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.account_balance, color: AppColors.primaryRed),
-                    const SizedBox(width: 8),
-                    Text(
-                      detail['nama_struktur'] ?? 'Dewan Pengurus Pusat ASKLIN',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.softRed,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.account_balance, color: AppColors.primaryRed, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            detail['nama_struktur'] ?? 'Dewan Pengurus Pusat ASKLIN',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                          Text('Periode ${detail['periode'] ?? '2023 - 2028'}',
+                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Text('Periode Kepengurusan: ${detail['periode'] ?? '2023 - 2028'}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                const SizedBox(height: 4),
-                Text('Alamat: ${detail['alamat_sekretariat'] ?? '-'}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                const SizedBox(height: 4),
-                Text('Email: ${detail['email_sekretariat'] ?? '-'}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                const Divider(height: 20),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textMuted),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        detail['alamat_sekretariat'] ?? 'Jl. Kramat VII No. 34, Senen, Jakarta Pusat',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.email_outlined, size: 16, color: AppColors.textMuted),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        detail['email_sekretariat'] ?? 'dpp@asklin.org',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+                if (isPengurusPusat && detail['telp_sekretariat'] != null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.phone, size: 14, color: Colors.green),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Hotline DPP: ${detail['telp_sekretariat']}',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green.shade800),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => _launchHelper('tel:${detail['telp_sekretariat']}'),
+                          child: const Icon(Icons.call, size: 18, color: Colors.green),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 18),
 
-        // Card Visi & Misi ASKLIN
-        Card(
-          color: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Visi ASKLIN',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryRed),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  '”Menjadikan Klinik sebagai sarana pelayanan kesehatan terdepan dalam melayani kesehatan masyarakat dengan sistem rujukan yang terarah dan terpadu”.',
-                  style: TextStyle(fontSize: 12, height: 1.5, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
-                ),
-                Divider(height: 20),
-                Text(
-                  'Misi ASKLIN',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryRed),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  '1. Membantu/memfasilitasi klinik menyelesaikan permasalahan.\n2. Menjaga standar klinik dalam memberikan pelayanan kepada masyarakat.\n3. Menghindari/mencegah persaingan tidak sehat antar klinik.\n4. Melakukan advokasi/pembelaan bagi klinik.\n5. Menyampaikan informasi kepada klinik tentang program-program Pemerintah tentang kesehatan yang harus dilaksanakan bersama masyarakat.\n6. Membantu terlaksananya tertib administrasi klinik dalam rangka menuju pelayanan yang berkualitas dan dapat dipertanggungjawabkan.',
-                  style: TextStyle(fontSize: 11.5, height: 1.5, color: AppColors.textSecondary),
-                ),
-              ],
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Struktur Kepengurusan Pusat',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
             ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        const Text(
-          'Susunan Pengurus Pusat',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.softRed,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${pengurus.length} Personil',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryRed),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
 
-        ...pengurus.map((p) {
-          return Card(
-            margin: const EdgeInsets.only(bottom: 10),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: AppColors.softRed,
-                child: const Icon(Icons.person, color: AppColors.primaryRed),
-              ),
-              title: Text(p['nama_lengkap'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              subtitle: Text(p['jabatan'] ?? '', style: const TextStyle(fontSize: 12, color: AppColors.primaryRed)),
+        if (pengurus.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: Text('Belum ada data pengurus pusat.', style: TextStyle(color: AppColors.textMuted)),
             ),
-          );
-        }),
+          )
+        else
+          ...pengurus.map((p) => _buildPengurusCard(p, isPengurusPusat)),
       ],
+    );
+  }
+
+  Widget _buildPengurusCard(dynamic p, bool isPengurusPusat) {
+    final int level = p['level'] ?? 0;
+    final String jabatan = p['jabatan'] ?? '';
+    final String nama = p['nama_lengkap'] ?? '';
+    final String? parentJabatan = p['parent_jabatan'];
+    final String? noTelp = p['no_telp'];
+    final bool canViewContact = p['can_view_contact'] == true;
+
+    // Margin kiri berdasarkan level tree
+    final double leftPadding = level == 0 ? 0 : (level == 1 ? 14 : 26);
+
+    Color badgeBg;
+    Color badgeText;
+    String badgeLabel;
+
+    if (level == 0) {
+      badgeBg = const Color(0xFFFDE8E8);
+      badgeText = AppColors.primaryRed;
+      badgeLabel = 'PIMPINAN INTI';
+    } else if (level == 1) {
+      badgeBg = const Color(0xFFE6F4EA);
+      badgeText = const Color(0xFF137333);
+      badgeLabel = 'KOORDINATOR / BIDANG';
+    } else {
+      badgeBg = const Color(0xFFE8F0FE);
+      badgeText = const Color(0xFF1A73E8);
+      badgeLabel = 'ANGGOTA / STAF';
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(left: leftPadding, bottom: 8),
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          side: BorderSide(
+            color: level == 0 ? AppColors.primaryRed.withOpacity(0.3) : AppColors.borderSubtle,
+            width: level == 0 ? 1.2 : 0.8,
+          ),
+        ),
+        elevation: level == 0 ? 1.5 : 0.5,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Avatar
+                  CircleAvatar(
+                    radius: level == 0 ? 22 : 18,
+                    backgroundColor: level == 0 ? AppColors.primaryRed : AppColors.softRed,
+                    child: Text(
+                      nama.isNotEmpty ? nama.trim().split(' ').map((w) => w[0]).take(2).join('').toUpperCase() : 'P',
+                      style: TextStyle(
+                        fontSize: level == 0 ? 13 : 11,
+                        fontWeight: FontWeight.bold,
+                        color: level == 0 ? Colors.white : AppColors.primaryRed,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: badgeBg,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                badgeLabel,
+                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: badgeText),
+                              ),
+                            ),
+                            if (parentJabatan != null && level > 0) ...[
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Bawahan: $parentJabatan',
+                                  style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          nama,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: level == 0 ? 14 : 13,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          jabatan,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: level == 0 ? AppColors.primaryRed : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              // Aksi Kontak Khusus Pengurus Pusat
+              if (canViewContact && noTelp != null && noTelp.isNotEmpty) ...[
+                const Divider(height: 16),
+                Row(
+                  children: [
+                    const Icon(Icons.phone_android, size: 14, color: AppColors.textMuted),
+                    const SizedBox(width: 4),
+                    Text(
+                      noTelp,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                    ),
+                    const Spacer(),
+                    // Tombol WhatsApp
+                    InkWell(
+                      onTap: () {
+                        final cleanPhone = noTelp.replaceAll(RegExp(r'[^0-9]'), '');
+                        final formatted = cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
+                        _launchHelper('https://wa.me/$formatted');
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE6F4EA),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFF34A853).withOpacity(0.4)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.chat, size: 13, color: Color(0xFF137333)),
+                            SizedBox(width: 4),
+                            Text('WhatsApp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF137333))),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    // Tombol Telepon
+                    InkWell(
+                      onTap: () => _launchHelper('tel:$noTelp'),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.softRed,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.primaryRed.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.call, size: 13, color: AppColors.primaryRed),
+                            SizedBox(width: 4),
+                            Text('Telepon', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryRed)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildDaerahContent() {
     final list = _organisasiData?['daftar_dpd'] as List? ?? [];
+    final isPengurusPusat = _organisasiData?['is_pengurus_pusat'] == true;
+
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: list.length,
@@ -239,6 +482,7 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
                 alamat: dpd['alamat_sekretariat'] ?? 'Sekretariat DPD Provinsi',
                 email: dpd['email_sekretariat'] ?? 'dpd@asklin.org',
                 telp: dpd['telp_sekretariat'] ?? 'Hubungi Pengurus Pusat',
+                isPengurusPusat: isPengurusPusat,
               );
             },
           ),
@@ -249,6 +493,8 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
 
   Widget _buildCabangContent() {
     final list = _organisasiData?['daftar_dpc'] as List? ?? [];
+    final isPengurusPusat = _organisasiData?['is_pengurus_pusat'] == true;
+
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: list.length,
@@ -269,6 +515,7 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
                 alamat: dpc['alamat_sekretariat'] ?? 'Sekretariat Cabang',
                 email: dpc['email_sekretariat'] ?? 'dpc@asklin.org',
                 telp: dpc['telp_sekretariat'] ?? 'Hubungi Sekretariat Daerah',
+                isPengurusPusat: isPengurusPusat,
               );
             },
           ),
@@ -284,6 +531,7 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
     required String alamat,
     required String email,
     required String telp,
+    required bool isPengurusPusat,
   }) {
     showModalBottomSheet(
       context: context,
@@ -324,13 +572,48 @@ class _OrganisasiScreenState extends State<OrganisasiScreen> {
               Text('Email: $email', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: 6),
               Text('Kontak: $telp', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              if (isPengurusPusat && telp.isNotEmpty && !telp.contains('Hubungi')) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.chat, size: 18),
+                        label: const Text('WhatsApp'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF25D366),
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () {
+                          final cleanPhone = telp.replaceAll(RegExp(r'[^0-9]'), '');
+                          final formatted = cleanPhone.startsWith('0') ? '62${cleanPhone.substring(1)}' : cleanPhone;
+                          _launchHelper('https://wa.me/$formatted');
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.call, size: 18),
+                        label: const Text('Telepon'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryRed,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () => _launchHelper('tel:$telp'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryRed),
-                  child: const Text('TUTUP', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text('TUTUP', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -378,4 +661,3 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
-

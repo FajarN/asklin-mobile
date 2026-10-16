@@ -198,6 +198,28 @@ class _KonfirmasiIuranScreenState extends State<KonfirmasiIuranScreen> with Sing
           : Column(
               children: [
                 _buildHeader(),
+                // TabBar dengan kontras tinggi & navigasi jelas
+                Container(
+                  color: Colors.white,
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorColor: AppColors.primaryRed,
+                    indicatorWeight: 3,
+                    labelColor: AppColors.primaryRed,
+                    unselectedLabelColor: AppColors.textSecondary,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    tabs: const [
+                      Tab(
+                        icon: Icon(Icons.upload_file, size: 20),
+                        text: 'Konfirmasi Bayar',
+                      ),
+                      Tab(
+                        icon: Icon(Icons.history, size: 20),
+                        text: 'Riwayat Pembayaran',
+                      ),
+                    ],
+                  ),
+                ),
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
@@ -215,75 +237,67 @@ class _KonfirmasiIuranScreenState extends State<KonfirmasiIuranScreen> with Sing
   Widget _buildHeader() {
     final klinik = _statusData?['klinik'] ?? {};
     final isLunas = klinik['is_lunas'] == true;
+    final canPop = Navigator.canPop(context);
 
-    return AsklinHeaderOrnament(
-      height: 220,
+    return Container(
+      color: AppColors.primaryRed,
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Expanded(
-                    child: Text(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              if (canPop) ...[
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
                       'Iuran & Keuangan Anggota',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 17,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isLunas ? Colors.green.shade600 : Colors.amber.shade700,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      isLunas ? 'LUNAS' : 'PENDING',
+                    const SizedBox(height: 2),
+                    Text(
+                      klinik['nama_klinik'] ?? 'Klinik Anggota ASKLIN',
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
+                        color: Colors.white70,
+                        fontSize: 12.5,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-              child: Text(
-                klinik['nama_klinik'] ?? 'Klinik Anggota ASKLIN',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  ],
                 ),
               ),
-            ),
-            const Spacer(),
-            TabBar(
-              controller: _tabController,
-              indicatorColor: Colors.white,
-              indicatorWeight: 3,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              tabs: const [
-                Tab(text: 'Konfirmasi Bayar'),
-                Tab(text: 'Riwayat Pembayaran'),
-              ],
-            ),
-          ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isLunas ? Colors.green.shade600 : Colors.amber.shade700,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  isLunas ? 'LUNAS' : 'PENDING',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -429,11 +443,11 @@ class _KonfirmasiIuranScreenState extends State<KonfirmasiIuranScreen> with Sing
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              rekening['bank'] ?? 'Bank Mandiri',
+                              rekening['bank'] ?? 'BANK SYARIAH INDONESIA',
                               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              rekening['cabang'] ?? 'KCP Jakarta Salemba',
+                              rekening['cabang'] ?? 'BSI Kantor Cabang',
                               style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                             ),
                           ],
@@ -451,9 +465,9 @@ class _KonfirmasiIuranScreenState extends State<KonfirmasiIuranScreen> with Sing
                           const Text('Nomor Rekening Resmi', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                           const SizedBox(height: 4),
                           Text(
-                            rekening['no_rekening'] ?? '123-00-0987654-1',
+                            rekening['no_rekening'] ?? '4000300027',
                             style: const TextStyle(
-                              fontSize: 17,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.2,
                               color: AppColors.primaryRed,
@@ -471,7 +485,7 @@ class _KonfirmasiIuranScreenState extends State<KonfirmasiIuranScreen> with Sing
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         ),
                         onPressed: () {
-                          Clipboard.setData(ClipboardData(text: rekening['no_rekening'] ?? '123-00-0987654-1'));
+                          Clipboard.setData(ClipboardData(text: rekening['no_rekening'] ?? '4000300027'));
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Nomor rekening ASKLIN berhasil disalin ke clipboard!'),
@@ -485,7 +499,7 @@ class _KonfirmasiIuranScreenState extends State<KonfirmasiIuranScreen> with Sing
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Atas Nama: ${rekening['atas_nama'] ?? 'ASOSIASI KLINIK INDONESIA (ASKLIN)'}',
+                    'Atas Nama: ${rekening['atas_nama'] ?? 'ASOSIASI KLINIK INDONESIA'}',
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 10),

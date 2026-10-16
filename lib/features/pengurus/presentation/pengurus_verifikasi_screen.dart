@@ -14,7 +14,9 @@ class PengurusVerifikasiScreen extends StatefulWidget {
   State<PengurusVerifikasiScreen> createState() => _PengurusVerifikasiScreenState();
 }
 
-class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
+class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final _apiClient = ApiClient();
   final _searchController = TextEditingController();
 
@@ -36,7 +38,15 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _initRoleAndData();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _initRoleAndData() async {
@@ -100,315 +110,234 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
-      body: RefreshIndicator(
-        color: AppColors.primaryRed,
-        onRefresh: _loadAllData,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            // Sliver Header Mewah
-            SliverAppBar(
-              expandedHeight: 180,
-              pinned: true,
-              backgroundColor: AppColors.primaryRed,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.account_balance_wallet, color: Colors.white),
-                  tooltip: 'Validasi Iuran Bendahara',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ValidasiPembayaranScreen()),
-                    );
-                  },
-                ),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                titlePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                title: const Text(
-                  'Verifikasi Anggota ASKLIN',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.primaryRed, AppColors.primaryDarkRed],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 50, left: 20, right: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(AppRadius.full),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.verified_user, color: Colors.white, size: 14),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _userRole.toUpperCase(),
-                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          wilayahName,
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Pusat Verifikasi Keanggotaan Faskes ASKLIN',
-                          style: TextStyle(color: Colors.white70, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // Konten Utama
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // KPI Ringkasan
-                    Row(
-                      children: [
-                        _buildKpiCard(
-                          label: 'Menunggu',
-                          value: (kpi['menunggu_verifikasi'] ?? 0).toString(),
-                          icon: Icons.hourglass_top,
-                          color: Colors.orange.shade700,
-                        ),
-                        const SizedBox(width: 10),
-                        _buildKpiCard(
-                          label: 'Perbaikan',
-                          value: (kpi['perlu_perbaikan'] ?? 0).toString(),
-                          icon: Icons.edit_note,
-                          color: Colors.amber.shade800,
-                        ),
-                        const SizedBox(width: 10),
-                        _buildKpiCard(
-                          label: 'Disetujui',
-                          value: (kpi['disetujui'] ?? 0).toString(),
-                          icon: Icons.check_circle_outline,
-                          color: AppColors.statusGreen,
-                        ),
-                        const SizedBox(width: 10),
-                        _buildKpiCard(
-                          label: 'Total',
-                          value: (kpi['total_anggota'] ?? 0).toString(),
-                          icon: Icons.local_hospital_outlined,
-                          color: Colors.blue.shade700,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Shortcut Validasi Iuran Bendahara
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ValidasiPembayaranScreen()),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppColors.primaryRed, AppColors.primaryDarkRed],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryRed.withOpacity(0.25),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.account_balance_wallet, color: Colors.white, size: 22),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
-                                  Text(
-                                    'Validasi Iuran Anggota (Bendahara)',
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'Periksa bukti transfer klinik, setujui status lunas & tolak',
-                                    style: TextStyle(color: Colors.white70, fontSize: 11),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 14),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    // Pencarian Faskes
-                    TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Cari nama klinik, pemilik, atau kota...',
-                        hintStyle: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-                        prefixIcon: const Icon(Icons.search, color: AppColors.primaryRed),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _loadAnggotaList();
-                                },
-                              )
-                            : null,
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: const BorderSide(color: AppColors.borderSubtle),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          borderSide: const BorderSide(color: AppColors.borderSubtle),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                      onSubmitted: (_) => _loadAnggotaList(),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Filter Chips Status
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: _statusFilters.map((f) {
-                          final isSelected = _selectedStatusFilter == f['value'];
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              label: Text(f['label']!),
-                              selected: isSelected,
-                              onSelected: (val) {
-                                setState(() {
-                                  _selectedStatusFilter = isSelected ? '' : f['value']!;
-                                });
-                                _loadAnggotaList();
-                              },
-                              selectedColor: AppColors.primaryRed,
-                              labelStyle: TextStyle(
-                                color: isSelected ? Colors.white : AppColors.textPrimary,
-                                fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              ),
-                              backgroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.full),
-                                side: BorderSide(
-                                  color: isSelected ? AppColors.primaryRed : AppColors.borderSubtle,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Judul Daftar
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Daftar Klinik Anggota',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
-                        ),
-                        Text(
-                          '${_anggotaList.length} Faskes',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
-              ),
-            ),
-
-            // List Faskes
-            _isLoading
-                ? const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(40),
-                      child: Center(child: CircularProgressIndicator(color: AppColors.primaryRed)),
-                    ),
-                  )
-                : _anggotaList.isEmpty
-                    ? const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.all(40),
-                          child: Center(
-                            child: Text(
-                              'Tidak ada data faskes yang sesuai filter.',
-                              style: TextStyle(color: AppColors.textSecondary),
-                            ),
-                          ),
-                        ),
-                      )
-                    : SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (ctx, idx) {
-                              final item = _anggotaList[idx];
-                              return _buildAnggotaCard(item);
-                            },
-                            childCount: _anggotaList.length,
-                          ),
-                        ),
-                      ),
-            const SliverToBoxAdapter(child: SizedBox(height: 40)),
+      appBar: AppBar(
+        title: const Text(
+          'Verifikasi Anggota & Iuran ASKLIN',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        backgroundColor: AppColors.primaryRed,
+        elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          tabs: const [
+            Tab(icon: Icon(Icons.verified_user_outlined, size: 20), text: 'Verifikasi Anggota'),
+            Tab(icon: Icon(Icons.account_balance_wallet_outlined, size: 20), text: 'Verifikasi Bendahara'),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildVerifikasiAnggotaTab(wilayahName, kpi),
+          const ValidasiPembayaranScreen(isEmbedded: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerifikasiAnggotaTab(String wilayahName, Map<String, dynamic> kpi) {
+    return RefreshIndicator(
+      color: AppColors.primaryRed,
+      onRefresh: _loadAllData,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Banner Wilayah & Role Pengurus
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.primaryRed, AppColors.primaryDarkRed],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryRed.withOpacity(0.2),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.security, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _userRole.toUpperCase(),
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        wilayahName,
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // KPI Ringkasan
+          Row(
+            children: [
+              _buildKpiCard(
+                label: 'Menunggu',
+                value: (kpi['menunggu_verifikasi'] ?? 0).toString(),
+                icon: Icons.hourglass_top,
+                color: Colors.amber.shade700,
+              ),
+              const SizedBox(width: 8),
+              _buildKpiCard(
+                label: 'Disetujui',
+                value: (kpi['terverifikasi_sah'] ?? 0).toString(),
+                icon: Icons.check_circle_outline,
+                color: AppColors.statusGreen,
+              ),
+              const SizedBox(width: 8),
+              _buildKpiCard(
+                label: 'Perlu Revisi',
+                value: (kpi['perlu_perbaikan'] ?? 0).toString(),
+                icon: Icons.error_outline,
+                color: AppColors.statusRed,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Pencarian Faskes
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Cari nama klinik, pemilik, atau kota...',
+              hintStyle: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+              prefixIcon: const Icon(Icons.search, color: AppColors.primaryRed),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        _searchController.clear();
+                        _loadAnggotaList();
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                borderSide: const BorderSide(color: AppColors.borderSubtle),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                borderSide: const BorderSide(color: AppColors.borderSubtle),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            onSubmitted: (_) => _loadAnggotaList(),
+          ),
+          const SizedBox(height: 12),
+
+          // Filter Chips Status
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _statusFilters.map((f) {
+                final isSelected = _selectedStatusFilter == f['value'];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(f['label']!),
+                    selected: isSelected,
+                    onSelected: (val) {
+                      setState(() {
+                        _selectedStatusFilter = isSelected ? '' : f['value']!;
+                      });
+                      _loadAnggotaList();
+                    },
+                    selectedColor: AppColors.primaryRed,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                      side: BorderSide(
+                        color: isSelected ? AppColors.primaryRed : AppColors.borderSubtle,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Judul Daftar
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Daftar Verifikasi Anggota Faskes',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+              ),
+              Text(
+                '${_anggotaList.length} Faskes',
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // List Faskes
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.all(40),
+              child: Center(child: CircularProgressIndicator(color: AppColors.primaryRed)),
+            )
+          else if (_anggotaList.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.borderSubtle),
+              ),
+              child: const Center(
+                child: Text(
+                  'Tidak ada data faskes yang sesuai filter.',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ),
+            )
+          else
+            ..._anggotaList.map((item) => _buildAnggotaCard(item)),
+
+          const SizedBox(height: 30),
+        ],
       ),
     );
   }
@@ -421,7 +350,7 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -436,7 +365,7 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
         child: Column(
           children: [
             Icon(icon, color: color, size: 20),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
               value,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
@@ -556,24 +485,25 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
               ],
             ),
             const SizedBox(height: 10),
+
+            // Badge tanggal & durasi menunggu verifikasi
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
-                color: isApproved ? AppColors.statusGreenBg : Colors.amber.shade50,
+                color: isApproved ? Colors.green.shade50 : Colors.amber.shade50,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: isApproved ? AppColors.statusGreen.withOpacity(0.3) : Colors.amber.shade400,
-                  width: 0.8,
+                  color: isApproved ? Colors.green.shade200 : Colors.amber.shade200,
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
-                    isApproved ? Icons.check_circle_outline : Icons.history_toggle_off,
-                    size: 15,
-                    color: isApproved ? AppColors.statusGreen : Colors.amber.shade900,
+                    isApproved ? Icons.check_circle : Icons.history_toggle_off,
+                    size: 16,
+                    color: isApproved ? AppColors.statusGreen : Colors.amber.shade800,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       isApproved
@@ -621,4 +551,3 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen> {
     );
   }
 }
-

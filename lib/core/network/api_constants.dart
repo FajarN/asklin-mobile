@@ -4,6 +4,9 @@ class ApiConstants {
   // Contoh: 'https://asklin.org/api/v1' untuk Production
   static const String baseUrl = 'https://asklin.org/api/v1';
   
+  // Kunci Rahasia Otorisasi Akses API Mobile (Testing Staging Key)
+  static const String appSecretKey = 'asklin_staging_20102026_secretkey_bc0768671d90666f4c34483f602eae7f1f74391281c6f37b';
+  
   // Auth Endpoints
   static const String login = '/auth/login';
   static const String register = '/auth/register';

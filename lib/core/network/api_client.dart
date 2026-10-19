@@ -14,6 +14,7 @@ class ApiClient {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'X-App-Key': ApiConstants.appSecretKey,
         },
       ),
     );
@@ -21,6 +22,9 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          // Selalu pastikan header X-App-Key tersemat pada setiap request
+          options.headers['X-App-Key'] = ApiConstants.appSecretKey;
+
           final token = await SecureStorageService.getToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';

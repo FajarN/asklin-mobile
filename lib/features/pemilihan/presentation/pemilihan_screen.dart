@@ -340,8 +340,8 @@ class _PemilihanScreenState extends State<PemilihanScreen> {
       bg = Colors.blue.shade100;
       fg = Colors.blue.shade800;
     } else if (status == 'ditutup') {
-      bg = Colors.rose.shade100;
-      fg = Colors.rose.shade800;
+      bg = Colors.red.shade100;
+      fg = Colors.red.shade800;
     }
 
     return Container(

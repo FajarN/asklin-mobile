@@ -12,6 +12,7 @@ import 'change_password_screen.dart';
 import 'help_center_screen.dart';
 import 'about_screen.dart';
 import '../../dashboard/presentation/pendaftaran_anggota_screen.dart';
+import '../../pemilihan/presentation/pemilihan_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -358,6 +359,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ],
                             ],
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Menu Khusus Pemilihan Ketua Cabang & Daerah (5 Tahunan)
+                      Card(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 1.5,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryRed.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.how_to_vote, color: AppColors.primaryRed),
+                          ),
+                          title: const Text(
+                            'Pemilihan Ketua ASKLIN',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: const Text(
+                            'Musyawarah Cabang & Daerah 5 Tahunan (LUBER JURDIL)',
+                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                          trailing: const Icon(Icons.chevron_right, size: 20),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const PemilihanScreen()),
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(height: 16),

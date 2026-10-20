@@ -36,5 +36,10 @@ class ApiConstants {
   static const String pembayaranRiwayat = '/pembayaran/riwayat';
   static const String pembayaranKonfirmasi = '/pembayaran/konfirmasi';
   static const String bendaharaPembayaran = '/bendahara/pembayaran';
-}
 
+  // Pemilihan Ketua Cabang & Daerah (5 Tahunan)
+  static const String pemilihanAktif = '/pemilihan/aktif';
+  static String pemilihanDetail(int id) => '/pemilihan/$id';
+  static String pemilihanVote(int id) => '/pemilihan/$id/vote';
+  static String pemilihanHasil(int id) => '/pemilihan/$id/hasil';
+}

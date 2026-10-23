@@ -63,10 +63,148 @@ class _VerifikasiKlinikDetailScreenState extends State<VerifikasiKlinikDetailScr
   }
 
   bool get _isCabang => widget.userRole.toLowerCase().contains('cabang');
+  bool get _isDaerah => widget.userRole.toLowerCase().contains('daerah');
   bool get _isPusat => widget.userRole.toLowerCase().contains('sekjen') ||
       widget.userRole.toLowerCase().contains('ketua') ||
       widget.userRole.toLowerCase().contains('superadmin') ||
       widget.userRole.toLowerCase().contains('pusat');
+
+  Future<void> _handleRequestPusatVerification() async {
+    final noteController = TextEditingController(
+      text: 'Pengurus Cabang merekomendasikan dan mengajukan verifikasi pengesahan ke Ketum & Sekjen.',
+    );
+
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            top: 24,
+            left: 24,
+            right: 24,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.forward_to_inbox, color: Colors.purple.shade700, size: 26),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Minta Verifikasi Ketum / Sekjen',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        Text(
+                          'Kirim notifikasi push ke Ketua Umum & Sekjen Pusat',
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Catatan Pengajuan ke Ketum & Sekjen:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: noteController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Tuliskan catatan kelayakan berkas atau rekomendasi cabang...',
+                  hintStyle: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                      ),
+                      child: const Text('Batal'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.send_rounded, size: 18),
+                      label: const Text('AJUKAN KE KETUM / SEKJEN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple.shade700,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                      ),
+                      onPressed: () => Navigator.pop(ctx, true),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isSubmitting = true);
+    try {
+      final res = await _apiClient.dio.post(
+        ApiConstants.requestVerifikasiPusat(widget.anggotaId),
+        data: {'catatan': noteController.text.trim()},
+      );
+
+      if (res.data['success'] == true) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Berhasil: Permintaan verifikasi diajukan ke Ketum & Sekjen dengan notifikasi Firebase.'),
+            backgroundColor: AppColors.statusGreen,
+          ),
+        );
+        _loadDetail();
+      } else {
+        throw Exception(res.data['message'] ?? 'Gagal memproses permintaan');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengajukan verifikasi ke Ketum & Sekjen: $e'),
+          backgroundColor: AppColors.primaryRed,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
 
   void _showActionDialog({
     required String title,
@@ -501,12 +639,12 @@ class _VerifikasiKlinikDetailScreenState extends State<VerifikasiKlinikDetailScr
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            icon: const Icon(Icons.check_circle, size: 18),
-                            label: const Text('VERIFIKASI CABANG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            icon: const Icon(Icons.check_circle, size: 16),
+                            label: const Text('VERIFIKASI CABANG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.statusGreen,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                             onPressed: () => _showActionDialog(
                               title: 'Verifikasi & Teruskan ke Sekjen Pusat',
@@ -519,18 +657,54 @@ class _VerifikasiKlinikDetailScreenState extends State<VerifikasiKlinikDetailScr
                         const SizedBox(width: 8),
                         Expanded(
                           child: ElevatedButton.icon(
-                            icon: const Icon(Icons.edit_note, size: 18),
-                            label: const Text('MINTA PERBAIKAN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            icon: const Icon(Icons.forward_to_inbox, size: 16),
+                            label: const Text('KE KETUM/SEKJEN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange.shade700,
+                              backgroundColor: Colors.purple.shade700,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            onPressed: _handleRequestPusatVerification,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.edit_note, size: 16),
+                            label: const Text('MINTA PERBAIKAN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.orange.shade800,
+                              side: BorderSide(color: Colors.orange.shade400),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
                             ),
                             onPressed: () => _showActionDialog(
                               title: 'Kembalikan untuk Perbaikan Berkas',
                               targetStatus: 'Perlu Perbaikan',
                               buttonColor: Colors.orange.shade700,
                               icon: Icons.edit_note,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.cancel_outlined, size: 16),
+                            label: const Text('DATA TIDAK SESUAI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primaryRed,
+                              side: const BorderSide(color: AppColors.primaryRed),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                            ),
+                            onPressed: () => _showActionDialog(
+                              title: 'Tolak / Data Tidak Sesuai',
+                              targetStatus: 'data tidak sesuai',
+                              buttonColor: AppColors.primaryRed,
+                              icon: Icons.cancel_outlined,
+                              isDanger: true,
                             ),
                           ),
                         ),
@@ -541,10 +715,9 @@ class _VerifikasiKlinikDetailScreenState extends State<VerifikasiKlinikDetailScr
                     Row(
                       children: [
                         Expanded(
-                          flex: 3,
                           child: ElevatedButton.icon(
-                            icon: const Icon(Icons.verified, size: 18),
-                            label: const Text('SETUJUI & TERBITKAN NO. ANGGOTA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            icon: const Icon(Icons.verified, size: 17),
+                            label: const Text('SETUJUI & TERBITKAN NO. ANGGOTA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.statusGreen,
                               foregroundColor: Colors.white,
@@ -558,22 +731,106 @@ class _VerifikasiKlinikDetailScreenState extends State<VerifikasiKlinikDetailScr
                             ),
                           ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.replay, size: 16),
+                            label: const Text('KEMBALIKAN KE CABANG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blue.shade800,
+                              side: BorderSide(color: Colors.blue.shade300),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                            ),
+                            onPressed: () => _showActionDialog(
+                              title: 'Kembalikan Berkas ke Pengurus Cabang',
+                              targetStatus: 'waiting',
+                              buttonColor: Colors.blue.shade700,
+                              icon: Icons.replay,
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
-                          flex: 2,
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.reply, size: 18),
-                            label: const Text('PERBAIKAN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange.shade700,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 13),
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.reply, size: 16),
+                            label: const Text('MINTA PERBAIKAN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.orange.shade800,
+                              side: BorderSide(color: Colors.orange.shade400),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
                             ),
                             onPressed: () => _showActionDialog(
                               title: 'Kembalikan untuk Perbaikan Dokumen',
                               targetStatus: 'Perlu Perbaikan',
                               buttonColor: Colors.orange.shade700,
                               icon: Icons.reply,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else if (_isDaerah) ...[
+                    // Aksi untuk Pengurus Daerah
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.verified_outlined, size: 16),
+                            label: const Text('VERIFIKASI DAERAH', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.statusGreen,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            onPressed: () => _showActionDialog(
+                              title: 'Verifikasi Wilayah Daerah',
+                              targetStatus: 'Terverifikasi Daerah',
+                              buttonColor: AppColors.statusGreen,
+                              icon: Icons.verified_outlined,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.forward_to_inbox, size: 16),
+                            label: const Text('TERUSKAN KE PUSAT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.purple.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            onPressed: () => _showActionDialog(
+                              title: 'Rekomendasikan ke Ketum & Sekjen',
+                              targetStatus: 'Verifikasi Sekjen',
+                              buttonColor: Colors.purple.shade700,
+                              icon: Icons.forward_to_inbox,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.edit_note, size: 16),
+                            label: const Text('MINTA PERBAIKAN BERKAS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.orange.shade800,
+                              side: BorderSide(color: Colors.orange.shade400),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                            ),
+                            onPressed: () => _showActionDialog(
+                              title: 'Kembalikan untuk Perbaikan Berkas',
+                              targetStatus: 'Perlu Perbaikan',
+                              buttonColor: Colors.orange.shade700,
+                              icon: Icons.edit_note,
                             ),
                           ),
                         ),

@@ -57,13 +57,13 @@ jobs:
               m_content = re.sub(r'android:label=\"[^\"]*\"', 'android:label=\"ASKLIN\"', m_content)
 
               # Ensure permissions exist
-              perms = '''    <uses-permission android:name=\"android.permission.INTERNET\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>\n'''
+              perms = '''    <uses-permission android:name=\"android.permission.INTERNET\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>\n    <uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\"/>\n    <uses-permission android:name=\"android.permission.VIBRATE\"/>\n'''
               if 'android.permission.INTERNET' not in m_content:
                   m_content = m_content.replace('<application', perms + '    <application')
 
               with open(manifest_path, 'w', encoding='utf-8') as f:
                   f.write(m_content)
-              print('Updated AndroidManifest.xml')
+              print('Updated AndroidManifest.xml with Notification permissions')
 
           # 2. Update strings.xml if exists
           strings_path = 'android/app/src/main/res/values/strings.xml'
@@ -75,7 +75,55 @@ jobs:
                   f.write(s_content)
               print('Updated strings.xml')
 
-          # 3. Update build.gradle for SDK 34 (Android 14)
+          # 3. Setup Firebase google-services.json if missing
+          gservices_path = 'android/app/google-services.json'
+          if not os.path.exists(gservices_path):
+              sample_json = '''{
+  "project_info": {
+    "project_number": "123456789012",
+    "project_id": "asklin-mobile",
+    "storage_bucket": "asklin-mobile.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:abcdef0123456789",
+        "android_client_info": {
+          "package_name": "org.asklin.asklin_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDummyKeyForAsklinMobileBuild123456"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}'''
+              with open(gservices_path, 'w', encoding='utf-8') as f:
+                  f.write(sample_json)
+              print('Generated default android/app/google-services.json')
+
+          # 4. Update top-level build.gradle with google-services classpath
+          top_gradle_path = 'android/build.gradle'
+          if os.path.exists(top_gradle_path):
+              with open(top_gradle_path, 'r', encoding='utf-8') as f:
+                  tg = f.read()
+              if 'com.google.gms:google-services' not in tg:
+                  if 'dependencies {' in tg:
+                      tg = tg.replace('dependencies {', "dependencies {\n        classpath 'com.google.gms:google-services:4.4.1'")
+                  with open(top_gradle_path, 'w', encoding='utf-8') as f:
+                      f.write(tg)
+                  print('Added google-services classpath to android/build.gradle')
+
+          # 5. Update app-level build.gradle for SDK 34 (Android 14) and apply google-services plugin
           gradle_path = 'android/app/build.gradle'
           if os.path.exists(gradle_path):
               with open(gradle_path, 'r', encoding='utf-8') as f:
@@ -86,9 +134,12 @@ jobs:
               g_content = re.sub(r'targetSdk(?:Version)?\s*=?\s*.*', 'targetSdkVersion 34', g_content)
               g_content = re.sub(r'minSdk(?:Version)?\s*=?\s*.*', 'minSdkVersion 21', g_content)
 
+              if 'apply plugin: \'com.google.gms.google-services\'' not in g_content and 'com.google.gms.google-services' not in g_content:
+                  g_content += "\napply plugin: 'com.google.gms.google-services'\n"
+
               with open(gradle_path, 'w', encoding='utf-8') as f:
                   f.write(g_content)
-              print('Updated build.gradle with SDK 34')
+              print('Updated app build.gradle with SDK 34 and google-services plugin')
           "
 
           echo "=== CONFIGURED AndroidManifest.xml ==="

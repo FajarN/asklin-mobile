@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
+import '../../../core/services/firebase_notification_service.dart';
 import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
@@ -75,6 +76,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
         await SecureStorageService.saveToken(token);
         await SecureStorageService.saveUserRole(role);
+
+        // Sync FCM token dan berlangganan topik sesuai role
+        try {
+          final fcmService = FirebaseNotificationService();
+          if (fcmService.fcmToken != null) {
+            fcmService.syncTokenToBackend(fcmService.fcmToken!);
+          }
+          fcmService.subscribeToRoleTopics(
+            role: role,
+            kotaId: user['kota']?.toString(),
+          );
+        } catch (_) {}
 
         if (_rememberMe) {
           await SecureStorageService.saveSavedCredentials(email, password);

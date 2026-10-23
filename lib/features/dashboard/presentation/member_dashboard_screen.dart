@@ -11,6 +11,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import 'pendaftaran_anggota_screen.dart';
 import '../../pembayaran/presentation/konfirmasi_iuran_screen.dart';
+import '../../notifikasi/presentation/notifikasi_screen.dart';
 
 class MemberDashboardScreen extends StatefulWidget {
   const MemberDashboardScreen({Key? key}) : super(key: key);
@@ -22,6 +23,8 @@ class MemberDashboardScreen extends StatefulWidget {
 class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
   final _apiClient = ApiClient();
   bool _isLoading = true;
+  int _unreadNotifCount = 0;
+  bool _isRequestingVerifikasi = false;
   Map<String, dynamic>? _profileData;
   Map<String, dynamic>? _statusData;
 
@@ -36,13 +39,175 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
       final resProfile = await _apiClient.dio.get(ApiConstants.profile);
       final resStatus = await _apiClient.dio.get(ApiConstants.statusKeanggotaan);
 
+      // Ambil juga jumlah unread notifikasi
+      int unread = 0;
+      try {
+        final resNotif = await _apiClient.dio.get(ApiConstants.notifikasiUnreadCount);
+        if (resNotif.data['success'] == true) {
+          unread = resNotif.data['data']['unread_count'] ?? 0;
+        }
+      } catch (_) {}
+
       setState(() {
         _profileData = resProfile.data['data'];
         _statusData = resStatus.data['data'];
+        _unreadNotifCount = unread;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleRequestVerifikasiCabang() async {
+    final noteController = TextEditingController();
+
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            top: 24,
+            left: 24,
+            right: 24,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryRed.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.assignment_turned_in, color: AppColors.primaryRed, size: 26),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Permintaan Verifikasi Cabang',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        Text(
+                          'Kirim pengajuan verifikasi faskes ke Pengurus Cabang',
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Catatan untuk Pengurus Cabang (Opsional):',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: noteController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Misal: Dokumen izin operasional dan SIP penanggung jawab sudah kami lengkapi...',
+                  hintStyle: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                      ),
+                      child: const Text('Batal'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.send_rounded, size: 18),
+                      label: const Text('KIRIM PERMINTAAN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryRed,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                      ),
+                      onPressed: () => Navigator.pop(ctx, true),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isRequestingVerifikasi = true);
+
+    try {
+      final res = await _apiClient.dio.post(
+        ApiConstants.requestVerifikasiKlinik,
+        data: {'catatan': noteController.text.trim()},
+      );
+
+      if (res.data['success'] == true) {
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Row(
+              children: const [
+                Icon(Icons.check_circle, color: AppColors.statusGreen),
+                SizedBox(width: 8),
+                Text('Permintaan Terkirim', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: const Text(
+              'Permintaan verifikasi telah diteruskan ke Pengurus Cabang di wilayah Anda melalui notifikasi Firebase. Silakan pantau status secara berkala.',
+              style: TextStyle(fontSize: 13),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Tutup', style: TextStyle(color: AppColors.primaryRed, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+        _loadDashboardData();
+      } else {
+        throw Exception(res.data['message'] ?? 'Gagal mengirim permintaan');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengirim permintaan verifikasi: $e'),
+          backgroundColor: AppColors.primaryRed,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isRequestingVerifikasi = false);
     }
   }
 
@@ -700,13 +865,50 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                             ),
                           ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            shape: BoxShape.circle,
+                        InkWell(
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const NotifikasiScreen()),
+                            );
+                            _loadDashboardData();
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.notifications_none, color: Colors.white),
+                              ),
+                              if (_unreadNotifCount > 0)
+                                Positioned(
+                                  right: -2,
+                                  top: -2,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.amber,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                    child: Text(
+                                      '$_unreadNotifCount',
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                          child: const Icon(Icons.notifications_none, color: Colors.white),
                         ),
                       ],
                     ),
@@ -830,6 +1032,107 @@ class _MemberDashboardScreenState extends State<MemberDashboardScreen> {
                 ),
               ),
             ),
+
+            // Tombol & Kartu Permintaan Verifikasi ke Pengurus Cabang (Untuk ~1000 klinik yang belum diverifikasi)
+            if (!isApproved && !isPengurus)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.orange.shade50, Colors.white],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: Colors.orange.shade300, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.orange.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade100,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.assignment_turned_in, color: Colors.orange.shade900, size: 22),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Permintaan Verifikasi Cabang',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                                ),
+                                Text(
+                                  status.toString().toLowerCase() == 'waiting'
+                                      ? 'Menunggu pemeriksaan Pengurus Cabang'
+                                      : 'Faskes belum diverifikasi Cabang',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: status.toString().toLowerCase() == 'waiting'
+                                        ? Colors.orange.shade900
+                                        : AppColors.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        status.toString().toLowerCase() == 'waiting'
+                            ? 'Permintaan verifikasi telah diajukan ke Pengurus Cabang wilayah Anda. Notifikasi Firebase telah dikirim ke pengurus untuk segera memeriksa data klinik.'
+                            : 'Klinik Anda belum disahkan. Tekan tombol di bawah untuk mengajukan permohonan verifikasi agar Pengurus Cabang segera memvalidasi berkas klinik.',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 42,
+                        child: ElevatedButton.icon(
+                          icon: _isRequestingVerifikasi
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Icon(Icons.send_rounded, size: 18),
+                          label: Text(
+                            status.toString().toLowerCase() == 'waiting'
+                                ? 'KIRIM ULANG PERMINTAAN VERIFIKASI'
+                                : 'MINTA VERIFIKASI KE PENGURUS CABANG',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange.shade800,
+                            foregroundColor: Colors.white,
+                            elevation: 1,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                          ),
+                          onPressed: _isRequestingVerifikasi ? null : _handleRequestVerifikasiCabang,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
             // Banner Lengkapi Pendaftaran Faskes jika status masih waiting, create_dokter, atau perlu perbaikan
             if (!isApproved && !isPengurus)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
+import '../../../core/services/firebase_notification_service.dart';
 import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
@@ -61,6 +62,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         final token = response.data['data']['token'];
         await SecureStorageService.saveToken(token);
         await SecureStorageService.saveUserRole('Klinik');
+
+        try {
+          final fcmService = FirebaseNotificationService();
+          if (fcmService.fcmToken != null) {
+            fcmService.syncTokenToBackend(fcmService.fcmToken!);
+          }
+          fcmService.subscribeToRoleTopics(role: 'Klinik');
+        } catch (_) {}
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

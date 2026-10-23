@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import 'verifikasi_klinik_detail_screen.dart';
 import 'validasi_pembayaran_screen.dart';
+import '../../notifikasi/presentation/notifikasi_screen.dart';
 
 class PengurusVerifikasiScreen extends StatefulWidget {
   const PengurusVerifikasiScreen({super.key});
@@ -22,6 +23,7 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen>
 
   bool _isLoading = true;
   String _userRole = 'Admin Cabang';
+  int _unreadNotifCount = 0;
   Map<String, dynamic>? _dashboardData;
   List<dynamic> _anggotaList = [];
   String _selectedStatusFilter = ''; // Kosong = Semua
@@ -65,8 +67,154 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen>
     await Future.wait([
       _loadDashboardStats(),
       _loadAnggotaList(),
+      _loadUnreadNotif(),
     ]);
     if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _loadUnreadNotif() async {
+    try {
+      final res = await _apiClient.dio.get(ApiConstants.notifikasiUnreadCount);
+      if (res.data['success'] == true && mounted) {
+        setState(() {
+          _unreadNotifCount = res.data['data']['unread_count'] ?? 0;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _requestPusatVerification(int anggotaId, String namaKlinik) async {
+    final noteController = TextEditingController(
+      text: 'Pengurus Cabang merekomendasikan dan mengajukan verifikasi pengesahan ke Ketum & Sekjen.',
+    );
+
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            top: 24,
+            left: 24,
+            right: 24,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.forward_to_inbox, color: Colors.purple.shade700, size: 26),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Minta Verifikasi Ketum / Sekjen',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        Text(
+                          'Klinik: $namaKlinik',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Catatan Rekomendasi Cabang ke Pusat:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: noteController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Tuliskan rekomendasi atau catatan untuk Ketum & Sekjen...',
+                  hintStyle: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                      ),
+                      child: const Text('Batal'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.send_rounded, size: 18),
+                      label: const Text('AJUKAN KE KETUM / SEKJEN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple.shade700,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                      ),
+                      onPressed: () => Navigator.pop(ctx, true),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final res = await _apiClient.dio.post(
+        ApiConstants.requestVerifikasiPusat(anggotaId),
+        data: {'catatan': noteController.text.trim()},
+      );
+
+      if (res.data['success'] == true) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Berhasil: Permintaan verifikasi $namaKlinik diteruskan ke Ketum & Sekjen.'),
+            backgroundColor: AppColors.statusGreen,
+          ),
+        );
+        _loadAllData();
+      } else {
+        throw Exception(res.data['message'] ?? 'Gagal mengajukan ke pusat');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengajukan ke pusat: $e'),
+          backgroundColor: AppColors.primaryRed,
+        ),
+      );
+    }
   }
 
   Future<void> _loadDashboardStats() async {
@@ -149,6 +297,46 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen>
         ),
         backgroundColor: AppColors.primaryRed,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications_none, size: 24),
+                if (_unreadNotifCount > 0)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: Colors.amber,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                      child: Text(
+                        '$_unreadNotifCount',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            tooltip: 'Notifikasi ASKLIN',
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotifikasiScreen()),
+              );
+              _loadAllData();
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
@@ -580,31 +768,76 @@ class _PengurusVerifikasiScreenState extends State<PengurusVerifikasiScreen>
               ),
             ),
             const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              height: 38,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.fact_check, size: 16),
-                label: const Text('PERIKSA & VERIFIKASI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isApproved ? Colors.grey.shade700 : AppColors.primaryRed,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
-                ),
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => VerifikasiKlinikDetailScreen(
-                        anggotaId: id,
-                        userRole: _userRole,
+            if (_userRole.toLowerCase().contains('cabang') && !isApproved) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.forward_to_inbox, size: 15),
+                      label: const Text('KE KETUM/SEKJEN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.purple.shade700,
+                        side: BorderSide(color: Colors.purple.shade300),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
                       ),
+                      onPressed: () => _requestPusatVerification(id, namaKlinik),
                     ),
-                  );
-                  _loadAllData();
-                },
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.fact_check, size: 15),
+                      label: const Text('VERIFIKASI', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryRed,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                      ),
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => VerifikasiKlinikDetailScreen(
+                              anggotaId: id,
+                              userRole: _userRole,
+                            ),
+                          ),
+                        );
+                        _loadAllData();
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ),
+            ] else ...[
+              SizedBox(
+                width: double.infinity,
+                height: 38,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.fact_check, size: 16),
+                  label: const Text('PERIKSA & VERIFIKASI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isApproved ? Colors.grey.shade700 : AppColors.primaryRed,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                  ),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => VerifikasiKlinikDetailScreen(
+                          anggotaId: id,
+                          userRole: _userRole,
+                        ),
+                      ),
+                    );
+                    _loadAllData();
+                  },
+                ),
+              ),
+            ],
           ],
         ),
       ),

@@ -30,6 +30,17 @@ class ApiConstants {
   static const String pengurusDashboard = '/pengurus/dashboard';
   static const String pengurusAnggota = '/pengurus/anggota';
   static const String pengurusVerifikasi = '/pengurus/verifikasi';
+  static String requestVerifikasiPusat(int id) => '/pengurus/request-verifikasi-pusat/$id';
+
+  // Permintaan Verifikasi Klinik (Anggota)
+  static const String requestVerifikasiKlinik = '/anggota/request-verifikasi';
+
+  // Notifikasi Terpadu & Firebase FCM
+  static const String notifikasi = '/notifikasi';
+  static const String notifikasiUnreadCount = '/notifikasi/unread-count';
+  static String notifikasiRead(int id) => '/notifikasi/$id/read';
+  static const String notifikasiReadAll = '/notifikasi/read-all';
+  static const String updateFcmToken = '/auth/fcm-token';
 
   // Pembayaran & Iuran Anggota
   static const String pembayaranStatus = '/pembayaran/status';
